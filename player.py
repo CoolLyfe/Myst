@@ -5,10 +5,10 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.health = 
-        self.max_health = 
-        self.attack = 
-        self.speed= 
-        self.image = pygame.image.load('../assets/')# player
+        self.max_health =
+        self.attack =
+        self.speed=
+        self.image = pygame.image.load('assets/sprite_test.png')# player
         self.rect = self.image.get_rect()
         self.rect.x = 0
         self.rect.y = 0

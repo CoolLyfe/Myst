@@ -90,5 +90,7 @@ def create_map_image(map, cell_size=1500):
     
 
     # je sais pas comment mettre de chemin non-absolut
-    image.save('C:/Users/loule/Desktop/game/asset/map_game.png')
+    image.save('assets/map_game.png')
     return image
+
+

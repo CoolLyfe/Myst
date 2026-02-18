@@ -5,7 +5,7 @@ pygame.init()
 pygame.display.set_caption("Myst")
 screen = pygame.display.set_mode((1920, 1080))
 
-background = pygame.image.load('../assets/background.png')
+background = pygame.image.load('assets/map_game.png')
 
 game = Game()
 running = True
