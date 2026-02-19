@@ -61,6 +61,10 @@ def main():
                 for btn in boutons:
                     if btn["rect"].collidepoint(pos):
                         print(f"Clicked: {btn['label']}")
+                        # Ajouter un "return FONCTION" a la place  du "{btn['label']}" pour lancer des fonctions avec les boutons
+                        if btn["label"] == "Quitter":
+                            pygame.quit()
+                            sys.exit()
                         # Verifie si le clique correspond aux coordonees d'un bouton
         draw_menu()
         clock.tick(60)
