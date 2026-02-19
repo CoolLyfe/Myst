@@ -22,7 +22,7 @@ boutons = [{"label": "Solo", "rect": pygame.Rect(175, 150, 250, 55)},
     {"label": "Notre équipe", "rect": pygame.Rect(60,  320, 160, 45)},
     {"label": "Paramètres", "rect": pygame.Rect(380, 320, 160, 45)},
     {"label": "Quitter", "rect": pygame.Rect(220, 380, 160, 45)},]
-# Caracteristiques des boutons ( label = texte, rect = position + taille )
+# Caracteristiques des boutons ( label = texte, rect = position + taille, (x, y, largeur, hauteur) )
 
 def draw_menu():
     screen.fill(GRIS)
