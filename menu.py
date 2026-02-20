@@ -3,6 +3,10 @@ import sys
 
 pygame.init()
 
+def quitgame():
+    pygame.quit()
+    sys.exit()
+
 LARGEUR, HAUTEUR = 600, 450
 screen = pygame.display.set_mode((LARGEUR, HAUTEUR))
 pygame.display.set_caption("Myst")
@@ -64,8 +68,7 @@ def main():
                         # Verifie si le clique correspond aux coordonees d'un bouton
                         # Ajouter un "return FONCTION" a la place  du "{btn['label']}" pour lancer des fonctions avec les boutons
                         if btn["label"] == "Quitter":
-                            pygame.quit()
-                            sys.exit()
+                            quitgame()
         draw_menu()
         clock.tick(60)
         # Fait tourner le menu a 60 fps
