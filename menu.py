@@ -67,6 +67,8 @@ def main():
                         print(f"Clicked: {btn['label']}")
                         # Verifie si le clique correspond aux coordonees d'un bouton
                         # Ajouter un "return FONCTION" a la place  du "{btn['label']}" pour lancer des fonctions avec les boutons
+                        if btn["label"] == "Solo":
+                            starting_game()
                         if btn["label"] == "Quitter":
                             quitgame()
         draw_menu()
