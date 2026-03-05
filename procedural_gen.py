@@ -36,8 +36,8 @@ def procedural_gen ():
     
     #for i in range (5):
     #   print(map[i])
-    
-    return map
+    print(start)
+    return map, start
 
 def create_map_image(map, cell_size=1000):
     
@@ -46,7 +46,7 @@ def create_map_image(map, cell_size=1000):
     
     img_width = longeur_z * cell_size
     img_height = largeur_y * cell_size
-    image = Image.new('RGB', (img_width, img_height), color='black')
+    image = Image.new('RGBA', (img_width, img_height), color='black')
     draw = ImageDraw.Draw(image)
     
     room_images = {
@@ -58,6 +58,12 @@ def create_map_image(map, cell_size=1000):
         }
     # en vrai il faudrai rajouter une salle "shop" ou salle "pnj encounter" (pour rencontrer 'igrek koi tegal')
     #reponse de louis.l : ntm trop dure on vera
+
+    #j'ai fais ca pour de la transparence
+
+    for y in range(largeur_y):
+        for x in range(longeur_z):
+            draw.rectangle([x*cell_size, y*cell_size, (x+1)*cell_size, (y+1)*cell_size], (0, 0, 0, 0), (0,0,0,0), width=2)
 
     for y in range(largeur_y):
         for x in range(longeur_z):
@@ -75,22 +81,18 @@ def create_map_image(map, cell_size=1000):
                     x2 = next_x * cell_size + cell_size // 2
                     y2 = next_y * cell_size + cell_size // 2
                     if (map[y][x][0] == 3) or  (map[y][x][0] == 4) or  (map[y][x][0] == 5):
-                        draw.line([x1, y1, x2, y2], fill=(255, 255, 0), width=cell_size//10)
+                        draw.line([x1, y1, x2, y2], fill=(255, 255, 0), width=cell_size//4)
                     elif map[y][x][0] == 2:
-                        draw.line([x1, y1, x2, y2], fill=(255, 0, 0), width=cell_size//10) 
+                        draw.line([x1, y1, x2, y2], fill=(255, 0, 0), width=cell_size//4) 
     
     for y in range(largeur_y):
         for x in range(longeur_z):
             room_type = map[y][x][0]
             # Remplace le rectangle par l'image de la salle
             room_img = room_images.get(room_type)
+            gap = 400
             if room_img:
-                resized = room_img.resize((cell_size-100, cell_size-100))
-                image.paste(resized, (x*cell_size+50, y*cell_size+50))
-
-
-    # je sais pas comment mettre de chemin non-absolut
+                resized = room_img.resize((cell_size-gap, cell_size-gap))
+                image.paste(resized, (x*cell_size+gap//2, y*cell_size+gap//2))
     image.save('assets/map_game.png')
     return image
-
-create_map_image(procedural_gen())
