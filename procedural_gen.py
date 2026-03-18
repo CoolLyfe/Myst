@@ -39,7 +39,7 @@ def procedural_gen ():
     print(start)
     return map, start
 
-def create_map_image(map, cell_size=1000):
+def create_map_image(map, cell_size=1500):
     
     largeur_y = len(map)
     longeur_z = len(map[0]) 
@@ -83,7 +83,7 @@ def create_map_image(map, cell_size=1000):
                     if (map[y][x][0] == 3) or  (map[y][x][0] == 4) or  (map[y][x][0] == 5):
                         draw.line([x1, y1, x2, y2], fill=(255, 255, 0), width=cell_size//4)
                     elif map[y][x][0] == 2:
-                        draw.line([x1, y1, x2, y2], fill=(255, 0, 0), width=cell_size//4) 
+                        draw.line([x1, y1, x2, y2], fill=(255, 0, 0), width=cell_size//6+50) 
     
     for y in range(largeur_y):
         for x in range(longeur_z):

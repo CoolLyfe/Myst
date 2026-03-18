@@ -5,6 +5,7 @@ from player import Player
 
 # --- Initialisation ---
 pygame.init()
+pygame.mouse.set_visible(False) 
 cell_size = 1000
 procedural_gen_data = procedural_gen()
 map_data = procedural_gen_data[0]
