@@ -7,7 +7,7 @@ class BasicMonster(Entity):
             health=100,
             attack=10,
             speed=1,
-            image_path="assets/bas_monstre.png",
+            image_path="assets/base_monstre.png",
             pos_x=pos_x,
             pos_y=pos_y,
             hitbox_width=50,
