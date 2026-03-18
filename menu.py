@@ -1,5 +1,6 @@
 import pygame
 import sys
+import game
 
 pygame.init()
 
@@ -60,6 +61,11 @@ def main():
                 # Recupere la position du clique pour verifier si il est sur un bouton
                 for btn in boutons:
                     if btn["rect"].collidepoint(pos):
+                        if btn["label"] == "Solo":
+                            pygame.quit()
+                            game.game()
+                            sys.exit()
+
                         print(f"Clicked: {btn['label']}")
                         # Verifie si le clique correspond aux coordonees d'un bouton
                         # Ajouter un "return FONCTION" a la place  du "{btn['label']}" pour lancer des fonctions avec les boutons
