@@ -11,12 +11,11 @@ procedural_gen_data = procedural_gen()
 map_data = procedural_gen_data[0]
 start_data = procedural_gen_data[1]
 map_surface = create_map_image(map_data, cell_size)
-lamap = pygame.image.load("assets/map_game.png")
-
 # Fenêtre adaptée à la taille de la map
 MAP_W, MAP_H = map_surface.size
 SCREEN_W, SCREEN_H = 1000, 600
 screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.RESIZABLE)
+lamap = pygame.image.load("assets/map_game.png").convert_alpha()
 pygame.display.set_caption("Myst")
 
 # --- Joueur ---
@@ -53,7 +52,7 @@ while True:
         dx -= player.speed
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
         dx += player.speed
-    player.move(dx, dy, MAP_W, MAP_H)
+    player.move(dx, dy, MAP_W, MAP_H, lamap)
 
     # Caméra centrée sur le joueur
     cam_x, cam_y = get_camera_offset(player)

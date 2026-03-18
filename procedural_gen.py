@@ -46,7 +46,8 @@ def create_map_image(map, cell_size=1500):
     
     img_width = longeur_z * cell_size
     img_height = largeur_y * cell_size
-    image = Image.new('RGBA', (img_width, img_height), color='black')
+    # fond transparent pour les zones sans salle/corridor
+    image = Image.new('RGBA', (img_width, img_height), color=(0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
     
     room_images = {
