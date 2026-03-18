@@ -11,12 +11,17 @@ procedural_gen_data = procedural_gen()
 map_data = procedural_gen_data[0]
 start_data = procedural_gen_data[1]
 map_surface = create_map_image(map_data, cell_size)
+
 # Fenêtre adaptée à la taille de la map
 MAP_W, MAP_H = map_surface.size
 SCREEN_W, SCREEN_H = 1000, 600
 screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.RESIZABLE)
-lamap = pygame.image.load("assets/map_game.png").convert_alpha()
 pygame.display.set_caption("Myst")
+
+# Charge le background après l'initialisation de l'écran
+background = pygame.image.load("assets/background_jsp.png").convert()
+background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
+lamap = pygame.image.load("assets/map_game.png").convert_alpha()
 
 # --- Joueur ---
 player_size = 100
@@ -54,11 +59,15 @@ while True:
         dx += player.speed
     player.move(dx, dy, MAP_W, MAP_H, lamap)
 
+
+
     # Caméra centrée sur le joueur
     cam_x, cam_y = get_camera_offset(player)
 
+    # Background fixe couvrant l'écran
+    screen.blit(background, (0, 0))
+
     # Affichage map
-    screen.fill((0,0,0))
     screen.blit(lamap, (-cam_x, -cam_y))
 
     # Affichage joueur (sprite)
