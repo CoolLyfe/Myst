@@ -1,26 +1,16 @@
-import pygame
+from entity import Entity
 
 
-class Player(pygame.sprite.Sprite):
+class Player(Entity):
     def __init__(self):
-        super().__init__()
-        self.health = 100
-        self.max_health = 100
-        self.attack = 5
-        self.speed = 5
-        self.image = pygame.image.load("assets/sprite_test.png")  # player
-        self.rect = self.image.get_rect()
-        self.rect.x = 0
-        self.rect.y = 0
-
-    def move_right(self):
-        self.rect.x += self.speed
-
-    def move_left(self):
-        self.rect.x -= self.speed
-
-    def move_up(self):
-        self.rect.y -= self.speed
-
-    def move_down(self):
-        self.rect.y += self.speed
+        super().__init__(
+            health=100,
+            attack=5,
+            speed=5,
+            image_path="assets/sprite_test.png",
+            pos_x=0,
+            pos_y=0,
+            hitbox_width=40,
+            hitbox_height=60
+        )
+        # Setup du joueur avec ses stats + son sprite + les mouvements des touches sont deplaces dans le game.py
