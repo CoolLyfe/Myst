@@ -1,5 +1,6 @@
 import pygame
 from player import Player
+from monster import Monster
 from procedural_gen import procedural_gen
 
 pygame.init()
@@ -8,7 +9,6 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode((1920, 1080))
 map_x = 0
 map_y = 0
-
 map = pygame.image.load("assets/map_game.png")
 # Mise en place du background du jeu par le png de la map avec l'algo de generation procedural_gen
 # # Ligne a modifier, ne pas prendre le png ( Laissez Louis.L faire)
@@ -16,11 +16,12 @@ map = pygame.image.load("assets/map_game.png")
 # map_width = map.get_width()
 # map_height = map.get_height()
 
-
 # Set l'ecran du jeu et la resolution
 def starting_game():
     player = Player()
+    monster = Monster()
     pressed = {}
+    # Creation du joueur + du dummy + dico des touches appuyer
 
     running = True
 
@@ -50,8 +51,12 @@ def starting_game():
 
         screen.blit(map, (0, 0))
         # screen.blit(Coordonnes salle de spawn, ( faire spawn en 0 0)) permet de dessiner la map et la salle de spawn au centre de l'ecran
+
         screen.blit(player.image, player.rect)
         # Fais apparaitre le sprit du joueur
+
+        screen.blit(monster.image, monster.rect)
+        # Fais apparaitre le sprit du monstre / dummy
 
         pygame.display.flip()
         clock.tick(60)
