@@ -1,6 +1,10 @@
 import pygame
 import sys
-from game import starting_game
+
+try:
+    from game import starting_game as launch_game
+except ImportError:
+    from game import game as launch_game
 
 pygame.init()
 
@@ -75,9 +79,10 @@ def main():
                         # Verifie si le clique correspond aux coordonees d'un bouton
                         # Ajouter un "return FONCTION" a la place  du "{btn['label']}" pour lancer des fonctions avec les boutons
                         if btn["label"] == "Solo":
-                            starting_game()
+                            launch_game()
                         if btn["label"] == "Quitter":
                             quitgame()
+
         draw_menu()
         clock.tick(60)
         # Fait tourner le menu a 60 fps
