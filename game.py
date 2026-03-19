@@ -1,3 +1,5 @@
+from turtle import screensize
+
 import pygame
 import sys
 from procedural_gen import procedural_gen, create_map_image
@@ -6,7 +8,7 @@ from player import Player
 def game():
     # --- Initialisation ---
     pygame.init()
-    pygame.mouse.set_visible(False) 
+    # pygame.mouse.set_visible(False)
     cell_size = 1000
     procedural_gen_data = procedural_gen()
     map_data = procedural_gen_data[0]
@@ -45,7 +47,7 @@ def game():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-
+        
         # Contrôles joueur
         keys = pygame.key.get_pressed()
         dx = dy = 0
@@ -59,12 +61,16 @@ def game():
             dx += player.speed
         player.move(dx, dy, MAP_W, MAP_H, lamap)
 
+        print(pygame.display.get_window_size())
 
+        screensize = pygame.display.get_window_size()
+        SCREEN_W, SCREEN_H = screensize[0], screensize[1]
 
         # Caméra centrée sur le joueur
         cam_x, cam_y = get_camera_offset(player)
 
         # Background fixe couvrant l'écran
+        background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
         screen.blit(background, (0, 0))
 
         # Affichage map
@@ -80,3 +86,6 @@ def game():
         pygame.display.flip()
         clock.tick(60)
 
+
+
+game()
