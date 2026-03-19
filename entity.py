@@ -38,7 +38,11 @@ class Entity(pygame.sprite.Sprite):
 
         self.attack_hitbox = pygame.Rect(0, 0, 0, 0)
         self.attacking = False
+        self.attack_timer = 0
+        self.attack_duration = 10
+        self.direction = "right"
 
+    
     def update_hitbox(self):
         self.hitbox.center = self.rect.center
         # Permet de garder la hitbox au meme endroit que le sprite
@@ -57,18 +61,20 @@ class Entity(pygame.sprite.Sprite):
     def move_right(self):
         self.rect.x += self.speed
         self.update_hitbox()
+        self.direction = "right"
 
     def move_left(self):
         self.rect.x -= self.speed
         self.update_hitbox()
-
+        self.direction = "left"
     def move_up(self):
         self.rect.y -= self.speed
         self.update_hitbox()
-
+        self.direction = "up"
     def move_down(self):
         self.rect.y += self.speed
         self.update_hitbox()
+        self.direction = "down"
         # Deplacement de base de l'entite
 
     def draw_hitbox(self, screen):
@@ -100,13 +106,17 @@ class Entity(pygame.sprite.Sprite):
             )
 
         self.attacking = True
+        self.attack_timer = self.attack_duration
 
     def check_attack_collision(self, target):
         if self.attacking and self.attack_hitbox.colliderect(target.hitbox):
             self.attack_target(target)
 
     def reset_attack(self):
-        self.attacking = False
+        if self.attack_timer > 0:
+            self.attack_timer -= 1
+        else:
+            self.attacking = False
 
     def draw_attack_hitbox(self, screen):
         if self.attacking:

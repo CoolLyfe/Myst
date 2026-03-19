@@ -33,7 +33,9 @@ def starting_game():
 
             elif event.type == pygame.KEYDOWN:
                 pressed[event.key] = True
-
+                if event.key == pygame.K_z:
+                    player.create_attack_hitbox(width=60, height=40, direction=player.direction)
+                    print(f"attacking: {player.attacking}")
             elif event.type == pygame.KEYUP:
                 pressed[event.key] = False
 
@@ -58,6 +60,11 @@ def starting_game():
         screen.blit(monster.image, monster.rect)
         # Fais apparaitre le sprit du monstre
 
+        player.check_attack_collision(monster)
+        player.draw_attack_hitbox(screen)
+        player.reset_attack()
+
         pygame.display.flip()
         clock.tick(60)
     pygame.quit()
+
