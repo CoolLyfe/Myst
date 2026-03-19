@@ -1,80 +1,109 @@
 import pygame
 import sys
-import game
+from procedural_gen import procedural_gen, create_map_image
+from player import Player
+from monster import BasicMonster
 
-pygame.init()
 
-LARGEUR, HAUTEUR = 600, 450
-screen = pygame.display.set_mode((LARGEUR, HAUTEUR))
-pygame.display.set_caption("Myst")
-# Definition des dimensions du menu + affichage  du nom
+def game():
+    # --- Initialisation ---
+    pygame.init()
+    # pygame.mouse.set_visible(False)
+    cell_size = 1500
+    map_data = procedural_gen()
+    map_surface = create_map_image(map_data, cell_size)
 
-GRIS = (100, 100, 100)
-NOIR = (0, 0, 0)
-BLANC = (255, 255, 255)
-# Definition des couleurs pour le menu ( Ajouter en plus si besoin )
+    # Fenêtre adaptée à la taille de la map
+    MAP_W, MAP_H = map_surface.size
+    SCREEN_W, SCREEN_H = 1000, 600
+    screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.RESIZABLE)
+    pygame.display.set_caption("Myst")
 
-title_font = pygame.font.SysFont("Chiller", 64, bold=True, italic=True)
-button_font = pygame.font.SysFont("Chiller", 28)
-# Definition de la police pour le text des bouttons ( Police,  taille, gras, italique)
+    lamap = pygame.image.load("assets/map_game.png").convert_alpha()
 
-boutons = [{"label": "Solo", "rect": pygame.Rect(175, 150, 250, 55)},
-    {"label": "En ligne", "rect": pygame.Rect(175, 230, 250, 55)},
-    {"label": "Notre équipe", "rect": pygame.Rect(60,  320, 160, 45)},
-    {"label": "Paramètres", "rect": pygame.Rect(380, 320, 160, 45)},
-    {"label": "Quitter", "rect": pygame.Rect(220, 380, 160, 45)},]
-# Caracteristiques des boutons ( label = texte, rect = position + taille, (x, y, largeur, hauteur) )
+    # --- Joueur ---
+    player_size = 100
+    player_start_x = MAP_W // 2
+    player_start_y = MAP_H // 2
+    player = Player(player_start_x, player_start_y, player_size)
 
-def draw_menu():
-    screen.fill(GRIS)
-    # Def fonction qui affiche le menu + remplissage du fond en gris ( jcrois on peut mettre un .png pour le fond a la  place du gris )
+    # --- Monstre ---
+    monster_size = 100
+    monster = BasicMonster(player_start_x + 300, player_start_y, monster_size)
 
-    title_surf = title_font.render("Myst", True, NOIR)
-    title_rect = title_surf.get_rect(center=(LARGEUR // 2, 75))
-    screen.blit(title_surf, title_rect)
-    # Apparition du Titre ( creation, centrer au milieu de la page, afficher le titre )
+    # --- Camera ---
+    def get_camera_offset(player):
+        cam_x = player.rect.centerx - SCREEN_W // 2
+        cam_y = player.rect.centery - SCREEN_H // 2
+        # Limite la caméra aux bords de la map
+        cam_x = max(0, min(cam_x, MAP_W - SCREEN_W))
+        cam_y = max(0, min(cam_y, MAP_H - SCREEN_H))
+        return cam_x, cam_y
 
-    for btn in boutons:
-        pygame.draw.rect(screen, NOIR, btn["rect"])
-        label_surf = button_font.render(btn["label"], True, BLANC)
-        label_rect = label_surf.get_rect(center=btn["rect"].center)
-        screen.blit(label_surf, label_rect)
-        # Apparition de chaque bouton en fonction des coordonees definis avant 
-
-    pygame.display.flip()
-
-def main():
-    # Fonction principale pour faire tourner  le menu en boucle et recuperer les cliques
+    # --- Boucle principale ---
     clock = pygame.time.Clock()
-    #  Setup d'un FPS cap pour le menu
-
     while True:
         for event in pygame.event.get():
-            # Recupere tous les cliques/touches appuyer
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-                # Ferme le menu/jeu si on clique sur la croix/quitter
 
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                pos = event.pos
-                # Recupere la position du clique pour verifier si il est sur un bouton
-                for btn in boutons:
-                    if btn["rect"].collidepoint(pos):
-                        if btn["label"] == "Solo":
-                            pygame.quit()
-                            game.game()
-                            sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    player.create_attack_hitbox(width=60, height=40)
 
-                        print(f"Clicked: {btn['label']}")
-                        # Verifie si le clique correspond aux coordonees d'un bouton
-                        # Ajouter un "return FONCTION" a la place  du "{btn['label']}" pour lancer des fonctions avec les boutons
-                        if btn["label"] == "Quitter":
-                            pygame.quit()
-                            sys.exit()
-        draw_menu()
+        # Controles joueur
+        keys = pygame.key.get_pressed()
+        dx = dy = 0
+
+        if keys[pygame.K_z] or keys[pygame.K_UP]:
+            dy -= player.speed
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            dy += player.speed
+        if keys[pygame.K_q] or keys[pygame.K_LEFT]:
+            dx -= player.speed
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            dx += player.speed
+
+        player.move(dx, dy, MAP_W, MAP_H, lamap)
+
+        screensize = pygame.display.get_window_size()
+        SCREEN_W, SCREEN_H = screensize[0], screensize[1]
+
+        # Caméra centrée sur le joueur
+        cam_x, cam_y = get_camera_offset(player)
+
+        # Fond écran
+        screen.fill((0, 0, 0))
+
+        # Affichage map
+        screen.blit(lamap, (-cam_x, -cam_y))
+
+        # Affichage joueur
+        player_screen_x = player.rect.centerx - cam_x
+        player_screen_y = player.rect.centery - cam_y
+        player_blit_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
+        screen.blit(player.image, player_blit_rect)
+
+        # Affichage monstre
+        monster_screen_x = monster.rect.centerx - cam_x
+        monster_screen_y = monster.rect.centery - cam_y
+        monster_blit_rect = monster.image.get_rect(center=(monster_screen_x, monster_screen_y))
+        screen.blit(monster.image, monster_blit_rect)
+
+        # Collision attaque joueur -> monstre
+        player.check_attack_collision(monster)
+
+        # Debug hitbox
+        player.draw_hitbox(screen, cam_x, cam_y)
+        monster.draw_hitbox(screen, cam_x, cam_y)
+        player.draw_attack_hitbox(screen, cam_x, cam_y)
+
+        player.reset_attack()
+
+        pygame.display.flip()
         clock.tick(60)
-        # Fait tourner le menu a 60 fps
+
 
 if __name__ == "__main__":
-    main()
+    game()
