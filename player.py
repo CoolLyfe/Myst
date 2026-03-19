@@ -32,7 +32,7 @@ class Player(pygame.sprite.Sprite):
             test_rect = self.rect.copy()
             test_rect.center = (clamped_x, clamped_y)
             if not self.is_position_walkable(test_rect, map_surface):
-                return  # mouvement bloqué
+                return 
 
         self.rect.center = (clamped_x, clamped_y)
 
@@ -44,6 +44,8 @@ class Player(pygame.sprite.Sprite):
             (rect.left, rect.bottom - 1),
             (rect.right - 1, rect.bottom - 1),
         ]
+
+        #check l'alpha de la map sous le jouer (alpha = 0 => transparent => pas walkable)
 
         w, h = map_surface.get_size()
         for (px, py) in pts:
