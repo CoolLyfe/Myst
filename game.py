@@ -20,7 +20,9 @@ def game():
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.RESIZABLE)
     pygame.display.set_caption("Myst")
 
+    background = pygame.image.load("assets/background_jsp.png").convert()
     lamap = pygame.image.load("assets/map_game.png").convert_alpha()
+    background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
 
     # --- Joueur ---
     player_size = 100
@@ -74,8 +76,9 @@ def game():
         # Caméra centrée sur le joueur
         cam_x, cam_y = get_camera_offset(player)
 
-        # Fond écran
-        screen.fill((0, 0, 0))
+        # Background fixe couvrant l'écran
+        background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
+        screen.blit(background, (0, 0))
 
         # Affichage map
         screen.blit(lamap, (-cam_x, -cam_y))
