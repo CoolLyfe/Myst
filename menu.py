@@ -4,6 +4,12 @@ import game
 
 pygame.init()
 
+
+def quitgame():
+    pygame.quit()
+    sys.exit()
+
+
 LARGEUR, HAUTEUR = 600, 450
 screen = pygame.display.set_mode((LARGEUR, HAUTEUR))
 pygame.display.set_caption("Myst")
@@ -18,12 +24,15 @@ title_font = pygame.font.SysFont("Chiller", 64, bold=True, italic=True)
 button_font = pygame.font.SysFont("Chiller", 28)
 # Definition de la police pour le text des bouttons ( Police,  taille, gras, italique)
 
-boutons = [{"label": "Solo", "rect": pygame.Rect(175, 150, 250, 55)},
+boutons = [
+    {"label": "Solo", "rect": pygame.Rect(175, 150, 250, 55)},
     {"label": "En ligne", "rect": pygame.Rect(175, 230, 250, 55)},
-    {"label": "Notre équipe", "rect": pygame.Rect(60,  320, 160, 45)},
+    {"label": "Notre équipe", "rect": pygame.Rect(60, 320, 160, 45)},
     {"label": "Paramètres", "rect": pygame.Rect(380, 320, 160, 45)},
-    {"label": "Quitter", "rect": pygame.Rect(220, 380, 160, 45)},]
+    {"label": "Quitter", "rect": pygame.Rect(220, 380, 160, 45)},
+]
 # Caracteristiques des boutons ( label = texte, rect = position + taille, (x, y, largeur, hauteur) )
+
 
 def draw_menu():
     screen.fill(GRIS)
@@ -39,9 +48,10 @@ def draw_menu():
         label_surf = button_font.render(btn["label"], True, BLANC)
         label_rect = label_surf.get_rect(center=btn["rect"].center)
         screen.blit(label_surf, label_rect)
-        # Apparition de chaque bouton en fonction des coordonees definis avant 
+        # Apparition de chaque bouton en fonction des coordonees definis avant
 
     pygame.display.flip()
+
 
 def main():
     # Fonction principale pour faire tourner  le menu en boucle et recuperer les cliques
@@ -69,12 +79,14 @@ def main():
                         print(f"Clicked: {btn['label']}")
                         # Verifie si le clique correspond aux coordonees d'un bouton
                         # Ajouter un "return FONCTION" a la place  du "{btn['label']}" pour lancer des fonctions avec les boutons
+                        if btn["label"] == "Solo":
+                            starting_game()
                         if btn["label"] == "Quitter":
-                            pygame.quit()
-                            sys.exit()
+                            quitgame()
         draw_menu()
         clock.tick(60)
         # Fait tourner le menu a 60 fps
+
 
 if __name__ == "__main__":
     main()

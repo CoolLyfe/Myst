@@ -2,13 +2,14 @@ import random
 from PIL import Image, ImageDraw
 import os
 
-def procedural_gen ():
+
+def procedural_gen():
     map = []
     for i in range(5):
         ligne = []
-        for j in range (8):
-            ligne.append([0, [], random.randint(1,3)])
-        map.append(ligne) 
+        for j in range(8):
+            ligne.append([0, [], random.randint(1, 3)])
+        map.append(ligne)
 
     directions = {"N": (0, -1),"S": (0, 1),"E": (1, 0),"O": (-1, 0)}
     direction_opposite = {"N": "S","S": "N","E": "O","O": "E"}
@@ -17,14 +18,15 @@ def procedural_gen ():
     map[start[1]][start[0]][0] = 1      # 0 = salle non existante ; 1 = salle de spawn ; 2 = salle de boss ; 3 = salle classique ; 4 = salle de loot ; 5 = salle de baston harr
 
     rooms = [start]
-    nbroom = random.randint(15,20)
+    nbroom = random.randint(15, 20)
 
-    while len(rooms) < nbroom + 1 :
+    while len(rooms) < nbroom + 1:
         x, y = random.choice(rooms)
-        next_direction_random , (dx, dy) = random.choice(list(directions.items()))
-        next_x, next_y = x+dx, y+dy
+        next_direction_random, (dx, dy) = random.choice(
+            list(directions.items()))
+        next_x, next_y = x + dx, y + dy
         if 0 <= x + dx < 8 and 0 <= y + dy < 5:
-            if len(map[y][x][1]) <= 2 :
+            if len(map[y][x][1]) <= 2:
                 if map[next_y][next_x][0] == 0:
                     if len(rooms) < nbroom :
                         map[next_y][next_x][0] = random.randint(3,3)
@@ -39,11 +41,12 @@ def procedural_gen ():
     print(start)
     return map, start
 
+
 def create_map_image(map, cell_size=1500):
-    
+
     largeur_y = len(map)
-    longeur_z = len(map[0]) 
-    
+    longeur_z = len(map[0])
+
     img_width = longeur_z * cell_size
     img_height = largeur_y * cell_size
     # fond transparent pour les zones sans salle/corridor
@@ -68,15 +71,16 @@ def create_map_image(map, cell_size=1500):
 
     for y in range(largeur_y):
         for x in range(longeur_z):
-            if map[y][x][0] > 0: 
+            if map[y][x][0] > 0:
                 connections = map[y][x][1]
-                directions = {"N": (0, -1), "S": (0, 1), "E": (1, 0), "O": (-1, 0)}
-                
+                directions = {"N": (0, -1), "S": (0, 1),
+                              "E": (1, 0), "O": (-1, 0)}
+
                 for new_direction in connections:
                     dx, dy = directions[new_direction]
                     next_x, next_y = x + dx, y + dy
-                    
-                    #div_x, div_y = random.randint(1,3), random.randint(1,3)      c'est pour le style mais ca marche pas 
+
+                    # div_x, div_y = random.randint(1,3), random.randint(1,3)      c'est pour le style mais ca marche pas
                     x1 = x * cell_size + cell_size // 2
                     y1 = y * cell_size + cell_size // 2
                     x2 = next_x * cell_size + cell_size // 2

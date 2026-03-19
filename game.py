@@ -2,6 +2,8 @@ import pygame
 import sys
 from procedural_gen import procedural_gen, create_map_image
 from player import Player
+from monster import BasicMonster
+from procedural_gen import procedural_gen
 
 def game():
     # --- Initialisation ---
@@ -45,6 +47,9 @@ def game():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_z:
+                    player.create_attack_hitbox(width=60, height=40, direction=player.direction)
 
         # Contrôles joueur
         keys = pygame.key.get_pressed()
@@ -76,6 +81,10 @@ def game():
         # create a rect for blitting based on the image size
         blit_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
         screen.blit(player.image, blit_rect)
+        player.reset_attack()
+        if player.attacking:
+            attack_rect_screen = player.attack_hitbox.move(-cam_x, -cam_y)
+            pygame.draw.rect(screen, (0, 255, 0), attack_rect_screen, 2)
 
         pygame.display.flip()
         clock.tick(60)
