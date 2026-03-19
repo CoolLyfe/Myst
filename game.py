@@ -10,7 +10,8 @@ def game():
     pygame.init()
     # pygame.mouse.set_visible(False)
     cell_size = 1500
-    map_data = procedural_gen()
+    cell_size = 1500
+    map_data, start_data = procedural_gen()
     map_surface = create_map_image(map_data, cell_size)
 
     # Fenêtre adaptée à la taille de la map
@@ -23,8 +24,8 @@ def game():
 
     # --- Joueur ---
     player_size = 100
-    player_start_x = MAP_W // 2
-    player_start_y = MAP_H // 2
+    player_start_x = start_data[0] * cell_size + cell_size // 2
+    player_start_y = start_data[1] * cell_size + cell_size // 2
     player = Player(player_start_x, player_start_y, player_size)
 
     # --- Monstre ---
