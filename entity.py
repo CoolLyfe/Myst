@@ -1,5 +1,6 @@
 import pygame
 
+
 class Entity(pygame.sprite.Sprite):
     def __init__(
         self,
@@ -10,7 +11,7 @@ class Entity(pygame.sprite.Sprite):
         pos_x,
         pos_y,
         hitbox_width=None,
-        hitbox_height=None
+        hitbox_height=None,
     ):
         super().__init__()
         self.health = health
@@ -29,10 +30,14 @@ class Entity(pygame.sprite.Sprite):
         if hitbox_height is None:
             hitbox_height = self.rect.height
 
-        self.hitbox = pygame.Rect(self.rect.x, self.rect.y, hitbox_width, hitbox_height)
+        self.hitbox = pygame.Rect(
+            self.rect.x, self.rect.y, hitbox_width, hitbox_height)
         # Setup de la hitbox de l'entite
 
         self.alive = True
+
+        self.attack_hitbox = pygame.Rect(0, 0, 0, 0)
+        self.attacking = False
 
     def update_hitbox(self):
         self.hitbox.center = self.rect.center
@@ -69,3 +74,40 @@ class Entity(pygame.sprite.Sprite):
     def draw_hitbox(self, screen):
         pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
         # Affiche la hitbox pour debug
+
+    def create_attack_hitbox(self, width, height, direction):
+        if direction == "right":
+            self.attack_hitbox = pygame.Rect(
+                self.hitbox.right, self.hitbox.centery - height // 2, width, height
+            )
+        elif direction == "left":
+            self.attack_hitbox = pygame.Rect(
+                self.hitbox.left - width,
+                self.hitbox.centery - height // 2,
+                width,
+                height,
+            )
+        elif direction == "up":
+            self.attack_hitbox = pygame.Rect(
+                self.hitbox.centerx - width // 2,
+                self.hitbox.top - height,
+                width,
+                height,
+            )
+        elif direction == "down":
+            self.attack_hitbox = pygame.Rect(
+                self.hitbox.centerx - width // 2, self.hitbox.bottom, width, height
+            )
+
+        self.attacking = True
+
+    def check_attack_collision(self, target):
+        if self.attacking and self.attack_hitbox.colliderect(target.hitbox):
+            self.attack_target(target)
+
+    def reset_attack(self):
+        self.attacking = False
+
+    def draw_attack_hitbox(self, screen):
+        if self.attacking:
+            pygame.draw.rect(screen, (0, 255, 0), self.attack_hitbox, 2)
