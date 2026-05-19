@@ -8,7 +8,7 @@ from monster import BasicMonster
 def game():
     # --- Initialisation ---
     pygame.init()
-    # pygame.mouse.set_visible(False)
+    pygame.mouse.set_visible(False)
     cell_size = 1500
     cell_size = 1500
     map_data, start_data = procedural_gen()
@@ -58,17 +58,49 @@ def game():
         # Contrôles joueur
         keys = pygame.key.get_pressed()
         dx = dy = 0
-
-        if keys[pygame.K_z] or keys[pygame.K_UP]:
+        speedcross = int(player.speed * 0.7071)  # speed / sqrt(2)
+        
+        if (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dy -= player.speed
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dy += player.speed
-        if keys[pygame.K_q] or keys[pygame.K_LEFT]:
+            player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
             dx -= player.speed
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
             dx += player.speed
-
-        player.move(dx, dy, MAP_W, MAP_H, lamap)
+            player.move(dx, dy, MAP_W, MAP_H, lamap)
+        #les deplacements en croisee
+        elif (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+            if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):    
+                dx -= speedcross
+                player.move(dx, dy, MAP_W, MAP_H, lamap)
+            if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
+                dy -= speedcross
+                player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+            if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
+                dx += speedcross
+                player.move(dx, dy, MAP_W, MAP_H, lamap)
+            if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
+                dy -= speedcross
+                player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+            if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):
+                dx -= speedcross
+                player.move(dx, dy, MAP_W, MAP_H, lamap)
+            if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
+                dy += speedcross
+                player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+            if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
+                dx += speedcross
+                player.move(dx, dy, MAP_W, MAP_H, lamap)
+            if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
+                dy += speedcross
+                player.move(dx, dy, MAP_W, MAP_H, lamap)
 
         screensize = pygame.display.get_window_size()
         SCREEN_W, SCREEN_H = screensize[0], screensize[1]
