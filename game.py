@@ -29,6 +29,8 @@ def game():
     player_start_x = start_data[0] * cell_size + cell_size // 2
     player_start_y = start_data[1] * cell_size + cell_size // 2
     player = Player(player_start_x, player_start_y, player_size)
+    attaque = 0
+    is_attacking = False
 
     # --- Monstre ---
     monster_size = 100
@@ -46,6 +48,7 @@ def game():
     # --- Boucle principale ---
     clock = pygame.time.Clock()
     while True:
+        delta_ms = clock.tick(60)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -54,53 +57,66 @@ def game():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player.create_attack_hitbox(width=60, height=40)
+                    is_attacking = True
+
 
         # Contrôles joueur
         keys = pygame.key.get_pressed()
         dx = dy = 0
         speedcross = int(player.speed * 0.7071)  # speed / sqrt(2)
         
-        if (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+        if not is_attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dy -= player.speed
             player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+        elif not is_attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dy += player.speed
             player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+        elif not is_attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
             dx -= player.speed
             player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+        elif not is_attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
             dx += player.speed
             player.move(dx, dy, MAP_W, MAP_H, lamap)
         #les deplacements en croisee
-        elif (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+        elif not is_attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
             if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):    
                 dx -= speedcross
                 player.move(dx, dy, MAP_W, MAP_H, lamap)
             if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
                 dy -= speedcross
                 player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+        elif not is_attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
                 dx += speedcross
                 player.move(dx, dy, MAP_W, MAP_H, lamap)
             if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
                 dy -= speedcross
                 player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+        elif not is_attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
             if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):
                 dx -= speedcross
                 player.move(dx, dy, MAP_W, MAP_H, lamap)
             if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
                 dy += speedcross
                 player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+        elif not is_attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
                 dx += speedcross
                 player.move(dx, dy, MAP_W, MAP_H, lamap)
             if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
                 dy += speedcross
                 player.move(dx, dy, MAP_W, MAP_H, lamap)
+
+        # Animation: décider si le joueur est en mouvement et si il court
+        moving = (
+            keys[pygame.K_z] or keys[pygame.K_UP] or
+            keys[pygame.K_s] or keys[pygame.K_DOWN] or
+            keys[pygame.K_q] or keys[pygame.K_LEFT] or
+            keys[pygame.K_d] or keys[pygame.K_RIGHT]
+        )
+        running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        player.set_running(running)
+        player.update_animation(delta_ms, moving)
 
         screensize = pygame.display.get_window_size()
         SCREEN_W, SCREEN_H = screensize[0], screensize[1]
@@ -134,11 +150,16 @@ def game():
         player.draw_hitbox(screen, cam_x, cam_y)
         monster.draw_hitbox(screen, cam_x, cam_y)
         player.draw_attack_hitbox(screen, cam_x, cam_y)
+        
+        if is_attacking:
+            attaque += 1
+            if attaque > 15:
+                is_attacking = False
+                attaque = 0
+                player.reset_attack()
 
-        player.reset_attack()
 
         pygame.display.flip()
-        clock.tick(60)
 
 
 if __name__ == "__main__":

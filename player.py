@@ -51,6 +51,8 @@ class Player(Entity):
         self.sprite_runU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
         img = pygame.image.load("assets/player_Urun_2.png").convert_alpha()
         self.sprite_runU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Urun_3.png").convert_alpha()
+        self.sprite_runU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
 
         img = pygame.image.load("assets/player_Drun_1.png").convert_alpha()
         self.sprite_runD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
