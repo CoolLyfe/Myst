@@ -61,13 +61,34 @@ class Player(Entity):
         img = pygame.image.load("assets/player_Drun_3.png").convert_alpha()
         self.sprite_runD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
 
+        img = pygame.image.load("assets/player_Lattaque_1.png").convert_alpha()
+        self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Lattaque_2.png").convert_alpha()
+        self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Lattaque_3.png").convert_alpha()
+        self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Lattaque_4.png").convert_alpha()
+        self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
+        img = pygame.image.load("assets/player_Rattaque_1.png").convert_alpha()
+        self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Rattaque_2.png").convert_alpha()
+        self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Rattaque_3.png").convert_alpha()
+        self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Rattaque_4.png").convert_alpha()
+        self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
 
         # Setup du joueur avec ses stats + son sprite
         # Animation state
         self.anim_index = 0
         self.anim_timer = 0
         self.anim_rate_walk = 150  # ms per frame when walking
-        self.anim_rate_run = 80    # ms per frame when running
+        self.anim_rate_run = 50    # ms per frame when running
+        # Attack animation state
+        self.attack_anim_index = 0
+        self.attack_anim_timer = 0
+        self.attack_rate = 80  # ms per frame for attack
         self.running = False
         # Ensure there is a valid image surface set
         if len(self.sprite_standing) > 0:
@@ -79,8 +100,49 @@ class Player(Entity):
     def set_running(self, running: bool):
         self.running = running
 
+    def create_attack_hitbox(self, width=60, height=60):
+        # Lorsqu'une attaque commence, appeler la logique parente puis
+        # réinitialiser l'animation d'attaque pour la jouer depuis le début.
+        super().create_attack_hitbox(width=width, height=height)
+        self.attack_anim_index = 0
+        self.attack_anim_timer = 0
+
     def update_animation(self, dt_ms: int, moving: bool):
-        
+        # Priorité à l'animation d'attaque si en train d'attaquer
+        if getattr(self, 'attacking', False):
+            # Choisir les frames d'attaque selon la direction (gauche/droite en priorité)
+            if self.direction == 'left' and self.sprite_attackL:
+                frames = self.sprite_attackL
+            elif self.direction == 'right' and self.sprite_attackR:
+                frames = self.sprite_attackR
+            elif self.direction == 'up' and self.sprite_attackU:
+                frames = self.sprite_attackU
+            elif self.direction == 'down' and self.sprite_attackD:
+                frames = self.sprite_attackD
+            else:
+                # Fallback sur droite/gauche si pas de frames up/down
+                frames = self.sprite_attackR if self.sprite_attackR else self.sprite_attackL
+
+            if not frames:
+                return
+
+            self.attack_anim_timer += dt_ms
+            while self.attack_anim_timer >= self.attack_rate:
+                self.attack_anim_timer -= self.attack_rate
+                self.attack_anim_index += 1
+                if self.attack_anim_index >= len(frames):
+                    # Fin de l'animation d'attaque
+                    self.attack_anim_index = 0
+                    self.attack_anim_timer = 0
+                    self.reset_attack()
+                    break
+
+            # Clamp index and appliquer l'image
+            idx = max(0, min(self.attack_anim_index, len(frames) - 1))
+            self.image = frames[idx]
+            return
+
+        # Si pas d'attaque : animation de marche/standing
         # Choix de la liste d'images selon l'état
         if moving:
             rate = self.anim_rate_run if self.running else self.anim_rate_walk
