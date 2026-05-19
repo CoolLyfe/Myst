@@ -1,3 +1,4 @@
+import pygame
 from entity import Entity
 
 
@@ -7,7 +8,7 @@ class Player(Entity):
             health=100,
             attack=10,
             speed=20,
-            image_path="assets/sprite_test.png",
+            image_path="assets/player_standing_1.png",
             pos_x=pos_x,
             pos_y=pos_y,
             sprite_size=sprite_size,
@@ -15,7 +16,95 @@ class Player(Entity):
             hitbox_height=int(sprite_size * 0.75)
         )
         self.size = sprite_size
+        self.sprite_standing = []
+        self.sprite_runU = []
+        self.sprite_runL = []
+        self.sprite_runR = []
+        self.sprite_runD = []
+        self.sprite_attackU = []
+        self.sprite_attackL = []
+        self.sprite_attackR = []
+        self.sprite_attackD = []
+            
+        img = pygame.image.load("assets/player_standing_1.png").convert_alpha()
+        self.sprite_standing.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_standing_2.png").convert_alpha()
+        self.sprite_standing.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_standing_3.png").convert_alpha()
+        self.sprite_standing.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
+        img = pygame.image.load("assets/player_Lrun_1.png").convert_alpha()
+        self.sprite_runL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Lrun_2.png").convert_alpha()
+        self.sprite_runL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Lrun_3.png").convert_alpha()
+        self.sprite_runL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
+        img = pygame.image.load("assets/player_Rrun_1.png").convert_alpha()
+        self.sprite_runR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Rrun_2.png").convert_alpha()
+        self.sprite_runR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Rrun_3.png").convert_alpha()
+        self.sprite_runR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
+        img = pygame.image.load("assets/player_Urun_1.png").convert_alpha()
+        self.sprite_runU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Urun_2.png").convert_alpha()
+        self.sprite_runU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
+        img = pygame.image.load("assets/player_Drun_1.png").convert_alpha()
+        self.sprite_runD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Drun_2.png").convert_alpha()
+        self.sprite_runD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player_Drun_3.png").convert_alpha()
+        self.sprite_runD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
+
         # Setup du joueur avec ses stats + son sprite
+        # Animation state
+        self.anim_index = 0
+        self.anim_timer = 0
+        self.anim_rate_walk = 150  # ms per frame when walking
+        self.anim_rate_run = 80    # ms per frame when running
+        self.running = False
+        # Ensure there is a valid image surface set
+        if len(self.sprite_standing) > 0:
+            self.image = self.sprite_standing[0]
+        else:
+            self.image = pygame.Surface((sprite_size, sprite_size), pygame.SRCALPHA)
+        self.direction = getattr(self, 'direction', 'down')
+
+    def set_running(self, running: bool):
+        self.running = running
+
+    def update_animation(self, dt_ms: int, moving: bool):
+        
+        # Choix de la liste d'images selon l'état
+        if moving:
+            rate = self.anim_rate_run if self.running else self.anim_rate_walk
+            if self.direction == 'left':
+                frames = self.sprite_runL
+            elif self.direction == 'right':
+                frames = self.sprite_runR
+            elif self.direction == 'up':
+                frames = self.sprite_runU
+            elif self.direction == 'down':
+                frames = self.sprite_runD
+            else:
+                frames = self.sprite_standing
+        else:
+            frames = self.sprite_standing
+            rate = self.anim_rate_walk
+
+        if not frames:
+            return
+
+        self.anim_timer += dt_ms
+        while self.anim_timer >= rate:
+            self.anim_timer -= rate
+            self.anim_index = (self.anim_index + 1) % len(frames)
+
+        self.image = frames[self.anim_index]
 
     def move(self, dx, dy, map_width, map_height, lamap):
         # Calcul de la nouvelle position proposee
