@@ -1,6 +1,5 @@
 # Myst
 Myst indie game by the Four Man Army Studio.
-PS : J'aime l'alcool
 
 Anti cheat + Chat verification :
 while 1 == 1
