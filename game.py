@@ -8,9 +8,8 @@ from monster import BasicMonster
 def game():
     # --- Initialisation ---
     pygame.init()
-    pygame.mouse.set_visible(False)
-    cell_size = 1500
-    cell_size = 1500
+    #pygame.mouse.set_visible(False)
+    cell_size = 2000
     map_data, start_data = procedural_gen()
     map_surface = create_map_image(map_data, cell_size)
 
@@ -25,13 +24,15 @@ def game():
     background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
 
     # --- Joueur ---
-    player_size = 100
+    player_size = 115
+    player_size = 115
     player_start_x = start_data[0] * cell_size + cell_size // 2
     player_start_y = start_data[1] * cell_size + cell_size // 2
     player = Player(player_start_x, player_start_y, player_size)
+    # Attaque gérée par `player.attacking` et `player.create_attack_hitbox()`
 
     # --- Monstre ---
-    monster_size = 100
+    monster_size = 150
     monster = BasicMonster(player_start_x + 300, player_start_y, monster_size)
 
     # --- Camera ---
@@ -46,80 +47,98 @@ def game():
     # --- Boucle principale ---
     clock = pygame.time.Clock()
     while True:
+        delta_ms = clock.tick(60)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    player.create_attack_hitbox(width=60, height=40)
+                if (event.key == pygame.K_SPACE) and not player.attacking:
+                    player.create_attack_hitbox(width=40, height=90)
+                    player.sword_swing_sfx.play()
+
 
         # Contrôles joueur
         keys = pygame.key.get_pressed()
         dx = dy = 0
         speedcross = int(player.speed * 0.7071)  # speed / sqrt(2)
-        
-        if (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+        moved = False
+
+        if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dy -= player.speed
-            player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dy += player.speed
-            player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
             dx -= player.speed
-            player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+        elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
             dx += player.speed
-            player.move(dx, dy, MAP_W, MAP_H, lamap)
+            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
         #les deplacements en croisee
-        elif (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+        elif not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
             if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):    
                 dx -= speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
             if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
                 dy -= speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
+        elif not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
                 dx += speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
             if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
                 dy -= speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
+        elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
             if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):
                 dx -= speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
             if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
                 dy += speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
+        elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
                 dx += speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
             if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
                 dy += speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
+
+        running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        player.set_running(running)
+        player.update_animation(delta_ms, moved)
+
+        if moved and not player.attacking:
+            player.start_footsteps()
+        else:
+            player.stop_footsteps()
 
         screensize = pygame.display.get_window_size()
         SCREEN_W, SCREEN_H = screensize[0], screensize[1]
 
-        # Caméra centrée sur le joueur
         cam_x, cam_y = get_camera_offset(player)
 
-        # Background fixe couvrant l'écran
         background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
         screen.blit(background, (0, 0))
 
-        # Affichage map
         screen.blit(lamap, (-cam_x, -cam_y))
 
-        # Affichage joueur
         player_screen_x = player.rect.centerx - cam_x
         player_screen_y = player.rect.centery - cam_y
-        player_blit_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
-        screen.blit(player.image, player_blit_rect)
+
+        if getattr(player, 'attacking', False): # je sais pas ce que ca fait c'est un tuto qu l'utilise mais ca marche donc pas touche.
+            scale = 1.25
+            Nw = int(player.image.get_width() * scale)
+            Nh = int(player.image.get_height() * scale)
+            img = pygame.transform.scale(player.image, (Nw, Nh))
+            img_rect = img.get_rect(center=(player_screen_x, player_screen_y))
+            screen.blit(img, img_rect)
+        else:
+            player_blit_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
+            screen.blit(player.image, player_blit_rect)
 
         # Affichage monstre
         monster_screen_x = monster.rect.centerx - cam_x
@@ -131,14 +150,11 @@ def game():
         player.check_attack_collision(monster)
 
         # Debug hitbox
-        player.draw_hitbox(screen, cam_x, cam_y)
-        monster.draw_hitbox(screen, cam_x, cam_y)
-        player.draw_attack_hitbox(screen, cam_x, cam_y)
-
-        player.reset_attack()
-
+        #player.draw_hitbox(screen, cam_x, cam_y)
+        #monster.draw_hitbox(screen, cam_x, cam_y)
+        #player.draw_attack_hitbox(screen, cam_x, cam_y)
+        
         pygame.display.flip()
-        clock.tick(60)
 
 
 if __name__ == "__main__":
