@@ -91,17 +91,17 @@ class Entity(pygame.sprite.Sprite):
             )
         elif self.direction == "up":
             self.attack_hitbox = pygame.Rect(
-                self.hitbox.centerx - width // 2,
-                self.hitbox.top - height,
-                width,
-                height
+                self.hitbox.centerx - height // 2,
+                self.hitbox.top - width,
+                height,
+                width
             )
         elif self.direction == "down":
             self.attack_hitbox = pygame.Rect(
-                self.hitbox.centerx - width // 2,
+                self.hitbox.centerx - height // 2,
                 self.hitbox.bottom,
-                width,
-                height
+                height,
+                width
             )
 
         self.attacking = True

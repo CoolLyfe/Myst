@@ -32,7 +32,7 @@ def game():
     # Attaque gérée par `player.attacking` et `player.create_attack_hitbox()`
 
     # --- Monstre ---
-    monster_size = 100
+    monster_size = 150
     monster = BasicMonster(player_start_x + 300, player_start_y, monster_size)
 
     # --- Camera ---
@@ -55,85 +55,82 @@ def game():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    player.create_attack_hitbox(width=60, height=40)
+                    player.create_attack_hitbox(width=30, height=90)
+                    player.sword_swing_sfx.play()
 
 
         # Contrôles joueur
         keys = pygame.key.get_pressed()
         dx = dy = 0
         speedcross = int(player.speed * 0.7071)  # speed / sqrt(2)
-        
+        moved = False
+
         if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dy -= player.speed
-            player.move(dx, dy, MAP_W, MAP_H, lamap)
+            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
         elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dy += player.speed
-            player.move(dx, dy, MAP_W, MAP_H, lamap)
+            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
         elif not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
             dx -= player.speed
-            player.move(dx, dy, MAP_W, MAP_H, lamap)
+            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
         elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
             dx += player.speed
-            player.move(dx, dy, MAP_W, MAP_H, lamap)
+            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
         #les deplacements en croisee
         elif not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
             if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):    
                 dx -= speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
             if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
                 dy -= speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
         elif not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
                 dx += speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
             if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
                 dy -= speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
         elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
             if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):
                 dx -= speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
             if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
                 dy += speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
         elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
                 dx += speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
             if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
                 dy += speedcross
-                player.move(dx, dy, MAP_W, MAP_H, lamap)
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
 
-        # Animation: décider si le joueur est en mouvement et si il court
-        moving = (
-            keys[pygame.K_z] or keys[pygame.K_UP] or
-            keys[pygame.K_s] or keys[pygame.K_DOWN] or
-            keys[pygame.K_q] or keys[pygame.K_LEFT] or
-            keys[pygame.K_d] or keys[pygame.K_RIGHT]
-        )
         running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
         player.set_running(running)
-        player.update_animation(delta_ms, moving)
+        player.update_animation(delta_ms, moved)
+
+        if moved and not player.attacking:
+            player.start_footsteps()
+        else:
+            player.stop_footsteps()
 
         screensize = pygame.display.get_window_size()
         SCREEN_W, SCREEN_H = screensize[0], screensize[1]
 
-        # Caméra centrée sur le joueur
         cam_x, cam_y = get_camera_offset(player)
 
-        # Background fixe couvrant l'écran
         background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
         screen.blit(background, (0, 0))
 
-        # Affichage map
         screen.blit(lamap, (-cam_x, -cam_y))
 
-        # Affichage joueur (agrandi de 20% pendant l'attaque)
         player_screen_x = player.rect.centerx - cam_x
         player_screen_y = player.rect.centery - cam_y
+
         if getattr(player, 'attacking', False): # je sais pas ce que ca fait c'est un tuto qu l'utilise mais ca marche donc pas touche.
-            scale = 1.1
+            scale = 1.15
             Nw = int(player.image.get_width() * scale)
             Nh = int(player.image.get_height() * scale)
             img = pygame.transform.scale(player.image, (Nw, Nh))
