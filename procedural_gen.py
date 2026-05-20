@@ -39,7 +39,7 @@ def procedural_gen ():
     print(start)
     return map, start
 
-def create_map_image(map, cell_size=1500):
+def create_map_image(map, cell_size=2500):
     
     largeur_y = len(map)
     longeur_z = len(map[0]) 
@@ -51,11 +51,11 @@ def create_map_image(map, cell_size=1500):
     draw = ImageDraw.Draw(image)
     
     room_images = {
-        1: Image.open("assets/spawn_room.png"),
-        2: Image.open("assets/boss_room.png"),
-        3: Image.open("assets/classic_room.jpeg"),
-        4: Image.open("assets/loot_room.png"),
-        5: Image.open("assets/fight_room.png"),
+        1: Image.open("assets/grassy_map.png"), #spawn room
+        2: Image.open("assets/snowy_map.png"), #boss room
+        3: Image.open("assets/base_map_good.png"), #classic room
+        4: Image.open("assets/loot_room.png"), #loot room
+        5: Image.open("assets/fight_room.png"), #fight room
         }
     # en vrai il faudrai rajouter une salle "shop" ou salle "pnj encounter" (pour rencontrer 'igrek koi tegal')
     #reponse de louis.l : ntm trop dure on vera
@@ -65,6 +65,16 @@ def create_map_image(map, cell_size=1500):
     for y in range(largeur_y):
         for x in range(longeur_z):
             draw.rectangle([x*cell_size, y*cell_size, (x+1)*cell_size, (y+1)*cell_size], (0, 0, 0, 0), (0,0,0,0), width=2)
+
+    for y in range(largeur_y):
+        for x in range(longeur_z):
+            room_type = map[y][x][0]
+            # Remplace le rectangle par l'image de la salle
+            room_img = room_images.get(room_type)
+            gap = 400
+            if room_img:
+                resized = room_img.resize((cell_size-gap, cell_size-gap))
+                image.paste(resized, (x*cell_size+gap//2, y*cell_size+gap//2))
 
     for y in range(largeur_y):
         for x in range(longeur_z):
@@ -82,18 +92,23 @@ def create_map_image(map, cell_size=1500):
                     x2 = next_x * cell_size + cell_size // 2
                     y2 = next_y * cell_size + cell_size // 2
                     if (map[y][x][0] == 3) or  (map[y][x][0] == 4) or  (map[y][x][0] == 5):
-                        draw.line([x1, y1, x2, y2], fill=(255, 255, 0), width=cell_size//4)
+                        draw.line(
+                            [x1 + (dx * (cell_size/2)) - (gap/2 * dx),
+                            y1 + (dy * (cell_size / 2)) - (gap/2 * dy),
+                            x2 - (dx * (cell_size / 2)) + (gap/2 * dx),
+                            y2 - (dy * (cell_size / 2)) + (gap/2 * dy)],
+                            fill=(10, 10, 10), width=cell_size//12)
                     elif map[y][x][0] == 2:
-                        draw.line([x1, y1, x2, y2], fill=(255, 0, 0), width=cell_size//6+50) 
+                        draw.line(
+                            [x1 + (dx * (cell_size/2)) - (gap/2 * dx),
+                            y1 + (dy * (cell_size / 2)) - (gap/2 * dy),
+                            x2 - (dx * (cell_size / 2)) + (gap/2 * dx),
+                            y2 - (dy * (cell_size / 2)) + (gap/2 * dy)], 
+                            fill=(10, 10, 10), width=cell_size//6+50) 
     
-    for y in range(largeur_y):
-        for x in range(longeur_z):
-            room_type = map[y][x][0]
-            # Remplace le rectangle par l'image de la salle
-            room_img = room_images.get(room_type)
-            gap = 400
-            if room_img:
-                resized = room_img.resize((cell_size-gap, cell_size-gap))
-                image.paste(resized, (x*cell_size+gap//2, y*cell_size+gap//2))
+
     image.save('assets/map_game.png')
     return image
+
+
+

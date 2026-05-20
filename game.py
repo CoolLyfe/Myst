@@ -8,9 +8,8 @@ from monster import BasicMonster
 def game():
     # --- Initialisation ---
     pygame.init()
-    pygame.mouse.set_visible(False)
-    cell_size = 1500
-    cell_size = 1500
+    #pygame.mouse.set_visible(False)
+    cell_size = 2000
     map_data, start_data = procedural_gen()
     map_surface = create_map_image(map_data, cell_size)
 
@@ -25,7 +24,8 @@ def game():
     background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
 
     # --- Joueur ---
-    player_size = 100
+    player_size = 115
+    player_size = 115
     player_start_x = start_data[0] * cell_size + cell_size // 2
     player_start_y = start_data[1] * cell_size + cell_size // 2
     player = Player(player_start_x, player_start_y, player_size)
@@ -54,8 +54,8 @@ def game():
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    player.create_attack_hitbox(width=30, height=90)
+                if (event.key == pygame.K_SPACE) and not player.attacking:
+                    player.create_attack_hitbox(width=40, height=90)
                     player.sword_swing_sfx.play()
 
 
@@ -130,7 +130,7 @@ def game():
         player_screen_y = player.rect.centery - cam_y
 
         if getattr(player, 'attacking', False): # je sais pas ce que ca fait c'est un tuto qu l'utilise mais ca marche donc pas touche.
-            scale = 1.15
+            scale = 1.25
             Nw = int(player.image.get_width() * scale)
             Nh = int(player.image.get_height() * scale)
             img = pygame.transform.scale(player.image, (Nw, Nh))
@@ -150,9 +150,9 @@ def game():
         player.check_attack_collision(monster)
 
         # Debug hitbox
-        player.draw_hitbox(screen, cam_x, cam_y)
-        monster.draw_hitbox(screen, cam_x, cam_y)
-        player.draw_attack_hitbox(screen, cam_x, cam_y)
+        #player.draw_hitbox(screen, cam_x, cam_y)
+        #monster.draw_hitbox(screen, cam_x, cam_y)
+        #player.draw_attack_hitbox(screen, cam_x, cam_y)
         
         pygame.display.flip()
 

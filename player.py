@@ -7,7 +7,7 @@ class Player(Entity):
         super().__init__(
             health=100,
             attack=10,
-            speed=15,
+            speed=10,
             image_path="assets/player/player_standing_1.png",
             pos_x=pos_x,
             pos_y=pos_y,
@@ -79,11 +79,29 @@ class Player(Entity):
         img = pygame.image.load("assets/player/player_Rattaque_4.png").convert_alpha()
         self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
 
+        img = pygame.image.load("assets/player/player_Uattaque_1.png").convert_alpha()
+        self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player/player_Uattaque_2.png").convert_alpha()
+        self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player/player_Uattaque_3.png").convert_alpha()
+        self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player/player_Uattaque_4.png").convert_alpha()
+        self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
+        img = pygame.image.load("assets/player/player_Dattaque_1.png").convert_alpha()
+        self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player/player_Dattaque_2.png").convert_alpha()
+        self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player/player_Dattaque_3.png").convert_alpha()
+        self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        img = pygame.image.load("assets/player/player_Dattaque_4.png").convert_alpha()
+        self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
         self.sword_swing_sfx = pygame.mixer.Sound("assets/sound/sword_swing.mp3") 
         self.sword_swing_sfx.set_volume(0.3)
 
         self.footstep_sfx = pygame.mixer.Sound("assets/sound/running_player.mp3")
-        self.footstep_sfx.set_volume(0.5)
+        self.footstep_sfx.set_volume(1)
         self.footstep_channel = None
 
         self.anim_index = 0
