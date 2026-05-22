@@ -123,7 +123,7 @@ def game():
 
         background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
         screen.blit(background, (0, 0))
-
+        
         screen.blit(lamap, (-cam_x, -cam_y))
 
         player_screen_x = player.rect.centerx - cam_x

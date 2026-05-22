@@ -57,6 +57,8 @@ def create_map_image(map, cell_size=2500):
         4: Image.open("assets/loot_room.png"), #loot room
         5: Image.open("assets/fight_room.png"), #fight room
         }
+    couloir_image = Image.open("assets/couloir.png").convert("RGBA")
+
     # en vrai il faudrai rajouter une salle "shop" ou salle "pnj encounter" (pour rencontrer 'igrek koi tegal')
     #reponse de louis.l : ntm trop dure on vera
 
@@ -91,24 +93,27 @@ def create_map_image(map, cell_size=2500):
                     y1 = y * cell_size + cell_size // 2
                     x2 = next_x * cell_size + cell_size // 2
                     y2 = next_y * cell_size + cell_size // 2
-                    if (map[y][x][0] == 3) or  (map[y][x][0] == 4) or  (map[y][x][0] == 5):
-                        draw.line(
-                            [x1 + (dx * (cell_size/2)) - (gap/2 * dx),
-                            y1 + (dy * (cell_size / 2)) - (gap/2 * dy),
-                            x2 - (dx * (cell_size / 2)) + (gap/2 * dx),
-                            y2 - (dy * (cell_size / 2)) + (gap/2 * dy)],
-                            fill=(10, 10, 10), width=cell_size//12)
-                    elif map[y][x][0] == 2:
-                        draw.line(
-                            [x1 + (dx * (cell_size/2)) - (gap/2 * dx),
-                            y1 + (dy * (cell_size / 2)) - (gap/2 * dy),
-                            x2 - (dx * (cell_size / 2)) + (gap/2 * dx),
-                            y2 - (dy * (cell_size / 2)) + (gap/2 * dy)], 
-                            fill=(10, 10, 10), width=cell_size//6+50) 
+
+                    start_x = x1 + (dx * (cell_size / 2)) - (gap / 1.11 * dx)
+                    start_y = y1 + (dy * (cell_size / 2)) - (gap / 1.11 * dy)
+                    end_x = x2 - (dx * (cell_size / 2)) + (gap / 1.11 * dx)
+                    end_y = y2 - (dy * (cell_size / 2)) + (gap / 1.11 * dy)
+
+                    if dx != 0:
+                        length = int(abs(end_x - start_x))
+                        thickness = int(cell_size // 12)
+                        couloir = couloir_image.resize((max(1, length), thickness), Image.LANCZOS)
+                        paste_x = int(min(start_x, end_x))
+                        paste_y = int(start_y - thickness / 2)
+                    else:
+                        length = int(abs(end_y - start_y))
+                        thickness = int(cell_size // 12)
+                        couloir = couloir_image.resize((max(1, length), thickness), Image.LANCZOS).rotate(90, expand=True)
+                        paste_x = int(start_x - thickness / 2)
+                        paste_y = int(min(start_y, end_y))
+
+                    image.paste(couloir, (paste_x, paste_y), couloir)
     
 
     image.save('assets/map_game.png')
     return image
-
-
-
