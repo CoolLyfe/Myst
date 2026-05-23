@@ -5,15 +5,16 @@ from entity import Entity
 class Player(Entity):
     def __init__(self, pos_x, pos_y, sprite_size):
         super().__init__(
-            health=100,
+            health=3,
             attack=10,
             speed=10,
+            nb_potions=2,
             image_path="assets/player/player_standing_1.png",
             pos_x=pos_x,
             pos_y=pos_y,
             sprite_size=sprite_size,
             hitbox_width=int(sprite_size * 0.55),
-            hitbox_height=int(sprite_size * 0.75)
+            hitbox_height=int(sprite_size * 0.75),
         )
         self.size = sprite_size
         self.sprite_standing = []

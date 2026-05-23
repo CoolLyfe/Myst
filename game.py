@@ -23,6 +23,8 @@ def game():
     lamap = pygame.image.load("assets/map_game.png").convert_alpha()
     background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
     fog_image = pygame.image.load("assets/fog_of_war.png").convert_alpha()
+    heart_image = pygame.image.load("assets/heart.png").convert_alpha()
+    heal_potion_image = pygame.image.load("assets/heal_potion.png").convert_alpha()
 
     # --- Joueur ---
     player_size = 115
@@ -66,47 +68,49 @@ def game():
         speedcross = int(player.speed * 0.7071)  # speed / sqrt(2)
         moved = False
 
-        if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-            dy -= player.speed
-            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-            dy += player.speed
-            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+        if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]):
+            if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                dx -= speedcross
+                dy -= speedcross
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                dx += speedcross
+                dy += speedcross
+            elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                dx += speedcross
+                dy -= speedcross
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                dx -= speedcross
+                dy += speedcross
+            else :
+                dy -= player.speed
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                dy += player.speed
+        elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+            if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                dx -= speedcross
+                dy += speedcross
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                dx += speedcross
+                dy -= speedcross
+            elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                dx += speedcross
+                dy += speedcross
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                dx -= speedcross   
+                dy -= speedcross
+            else :
+                dy += player.speed
+                moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                dy -= player.speed
+        elif not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
             dx -= player.speed
             moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-        elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_z] or keys[pygame.K_UP]) and not (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+            dx += player.speed
+        elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             dx += player.speed
             moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-        #les deplacements en croisee
-        elif not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
-            if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):    
-                dx -= speedcross
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
-            if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
-                dy -= speedcross
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
-        elif not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-            if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
-                dx += speedcross
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
-            if player.is_position_walkable(player.rect.move(0, dy - player.speed), lamap):
-                dy -= speedcross
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
-        elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
-            if player.is_position_walkable(player.rect.move(dx - player.speed, 0), lamap):
-                dx -= speedcross
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
-            if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
-                dy += speedcross
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
-        elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-            if player.is_position_walkable(player.rect.move(dx + player.speed, 0), lamap):
-                dx += speedcross
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
-            if player.is_position_walkable(player.rect.move(0, dy + player.speed), lamap):
-                dy += speedcross
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap) or moved
+            dx -= player.speed
+        
 
         running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
         player.set_running(running)
@@ -150,6 +154,15 @@ def game():
         # Affichage brouillard
         fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))
         screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+        # HUD
+
+        heart_scaled = pygame.transform.scale(heart_image, (SCREEN_W // 25, SCREEN_H // 25))
+        heal_potion_scaled = pygame.transform.scale(heal_potion_image, (SCREEN_W // 25, SCREEN_H // 25))
+        for i in range(player.health):
+            screen.blit(heart_scaled, (SCREEN_W // 40 + i * (heart_scaled.get_width() + 5), SCREEN_H // 40))
+        for i in range(player.nb_potions):
+            screen.blit(heal_potion_scaled, (SCREEN_W // 40 + i * (heal_potion_scaled.get_width() + 5), SCREEN_H // 35 + heart_scaled.get_height()))
 
         # Collision attaque joueur -> monstre
         player.check_attack_collision(monster)

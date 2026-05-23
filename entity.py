@@ -7,6 +7,7 @@ class Entity(pygame.sprite.Sprite):
         health,
         attack,
         speed,
+        nb_potions,
         image_path,
         pos_x,
         pos_y,
@@ -19,6 +20,7 @@ class Entity(pygame.sprite.Sprite):
         self.max_health = health
         self.attack = attack
         self.speed = speed
+        self.nb_potions = nb_potions
 
         self.image = pygame.image.load(image_path).convert_alpha()
         self.image = pygame.transform.scale(self.image, (sprite_size, sprite_size))

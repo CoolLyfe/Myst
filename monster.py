@@ -7,6 +7,7 @@ class BasicMonster(Entity):
             health=80,
             attack=12,
             speed=8,
+            nb_potions=0,
             image_path="assets/base_monstre.png",
             pos_x=pos_x,
             pos_y=pos_y,

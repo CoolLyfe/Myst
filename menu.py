@@ -8,7 +8,7 @@ def quitgame():
     sys.exit()
 
 LARGEUR, HAUTEUR = 600, 450
-screen = pygame.display.set_mode((LARGEUR, HAUTEUR))
+screen = pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.RESIZABLE)
 pygame.display.set_caption("Myst")
 # Definition des dimensions du menu + affichage  du nom
 
@@ -62,7 +62,6 @@ def main():
                 pygame.quit()
                 sys.exit()
                 # Ferme le menu/jeu si on clique sur la croix/quitter
-
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 pos = event.pos
                 # Recupere la position du clique pour verifier si il est sur un bouton
@@ -77,8 +76,10 @@ def main():
 
                         if btn["label"] == "Quitter":
                             quitgame()
-
+            else :
+                draw_menu()
         draw_menu()
+        pygame.display.update()
         clock.tick(60)
         # Fait tourner le menu a 60 fps
 
