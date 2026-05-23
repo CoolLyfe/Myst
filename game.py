@@ -22,6 +22,7 @@ def game():
     background = pygame.image.load("assets/background_jsp.png").convert()
     lamap = pygame.image.load("assets/map_game.png").convert_alpha()
     background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
+    fog_image = pygame.image.load("assets/fog_of_war.png").convert_alpha()
 
     # --- Joueur ---
     player_size = 115
@@ -145,6 +146,10 @@ def game():
         monster_screen_y = monster.rect.centery - cam_y
         monster_blit_rect = monster.image.get_rect(center=(monster_screen_x, monster_screen_y))
         screen.blit(monster.image, monster_blit_rect)
+
+        # Affichage brouillard
+        fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))
+        screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
         # Collision attaque joueur -> monstre
         player.check_attack_collision(monster)
