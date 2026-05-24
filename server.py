@@ -6,9 +6,11 @@ import threading
 from procedural_gen import procedural_gen
 
 class ServerNetwork:
-    def __init__(self, host="0.0.0.0", port=8001):
+    def __init__(self, host="0.0.0.0", port=8001, max_clients=999, room_name=None):
         self.host = host
         self.port = port
+        self.max_clients = max_clients
+        self.room_name = room_name
         self.clients = {}  # addr -> player_id
         self.player_states = {} # player_id -> state
         self.monster_states = {} # monster_id -> state
@@ -45,6 +47,8 @@ class ServerNetwork:
         # Start background tasks
         asyncio.create_task(self.broadcast_loop())
         asyncio.create_task(self.monster_ai_loop())
+        if self.room_name:
+            asyncio.create_task(self.lan_announcer())
         
         while self.running:
             try:
@@ -191,6 +195,24 @@ class ServerNetwork:
             await self.loop.sock_sendto(self.sock, data, addr)
         except Exception:
             pass
+
+    async def lan_announcer(self):
+        """Broadcasts the room name on the local network for discovery."""
+        broadcast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        broadcast_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        broadcast_sock.setblocking(False)
+        
+        msg = f"MYST_SERVER:{self.room_name}:{self.port}".encode()
+        print(f"[SERVER] LAN Announcer started for room: {self.room_name}")
+        
+        while self.running:
+            try:
+                # Send to the broadcast address of the local network
+                broadcast_sock.sendto(msg, ("<broadcast>", 8002))
+            except Exception:
+                pass
+            await asyncio.sleep(2.0)
+        broadcast_sock.close()
 
     async def stop(self):
         print("[SERVER] Shutting down...")

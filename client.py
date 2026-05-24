@@ -49,6 +49,35 @@ class ClientNetwork:
         self.running = False
         self.loop = None
 
+    @staticmethod
+    def discover_room(room_name, timeout=5.0):
+        """Listens for LAN broadcasts and returns (ip, port) if room is found."""
+        print(f"[CLIENT] Searching for room: {room_name}...")
+        discovery_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        discovery_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        discovery_sock.bind(("", 8002))
+        discovery_sock.settimeout(1.0)
+        
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                data, addr = discovery_sock.recvfrom(1024)
+                msg = data.decode()
+                if msg.startswith("MYST_SERVER:"):
+                    parts = msg.split(":")
+                    if len(parts) == 3 and parts[1] == room_name:
+                        port = int(parts[2])
+                        print(f"[CLIENT] Room found at {addr[0]}:{port}")
+                        discovery_sock.close()
+                        return addr[0], port
+            except socket.timeout:
+                continue
+            except Exception:
+                break
+        
+        discovery_sock.close()
+        return None, None
+
     async def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setblocking(False)

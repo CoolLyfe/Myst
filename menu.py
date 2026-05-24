@@ -2,6 +2,7 @@ import pygame
 import sys
 import game
 import pyvidplayer
+import time
 
 pygame.init()
 def quitgame():
@@ -15,17 +16,14 @@ video.set_size((1920, 1080))
 LARGEUR, HAUTEUR = 1920, 1080
 screen = pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
 pygame.display.set_caption("Myst")
-# Definition des dimensions du menu + affichage  du nom
 
 GRIS = (100, 100, 100)
 NOIR = (0, 0, 0)
 BLANC = (255, 255, 255)
-# Definition des couleurs pour le menu ( Ajouter en plus si besoin )
+ROUGE = (200, 50, 50)
 
 title_font = pygame.font.SysFont("Chiller", 1500, bold=True, italic=True)
 button_font = pygame.font.SysFont("Chiller", 50)
-# Definition de la police pour le text des bouttons ( Police,  taille, gras, italique)
-
 
 boutons = [
     {"label": "Solo", "rect": pygame.Rect(LARGEUR // 2 - LARGEUR // 6, HAUTEUR // 2, LARGEUR // 3, HAUTEUR // 8)},
@@ -42,80 +40,123 @@ online_buttons = [
 ]
 
 menu_state = "main"
-# Caracteristiques des boutons ( label = texte, rect = position + taille, (x, y, largeur, hauteur) )
-
+input_text = ""
+error_msg = ""
+error_timer = 0
 
 def draw_menu():
+    global error_msg, error_timer
     video.draw(screen, (0, 0))
-    # Def fonction qui affiche le menu + remplissage du fond en gris ( jcrois on peut mettre un .png pour le fond a la  place du gris )
 
     title_surf = title_font.render("Myst", True, BLANC)
     title_scaled = pygame.transform.scale(title_surf, (LARGEUR // 3, HAUTEUR // 5))
     screen.blit(title_scaled, (LARGEUR // 2 - title_scaled.get_width() // 2, HAUTEUR // 4 - title_scaled.get_height() // 2))
-    # Apparition du Titre ( creation, centrer au milieu de la page, afficher le titre )
 
     if menu_state == "main":
-        active_buttons = boutons
-    else:
-        active_buttons = online_buttons
+        for btn in boutons:
+            pygame.draw.rect(screen, NOIR, btn["rect"])
+            label_surf = button_font.render(btn["label"], True, BLANC)
+            label_rect = label_surf.get_rect(center=btn["rect"].center)
+            screen.blit(label_surf, label_rect)
+    elif menu_state == "online":
+        for btn in online_buttons:
+            pygame.draw.rect(screen, NOIR, btn["rect"])
+            label_surf = button_font.render(btn["label"], True, BLANC)
+            label_rect = label_surf.get_rect(center=btn["rect"].center)
+            screen.blit(label_surf, label_rect)
+    elif menu_state in ["join", "host_setup"]:
+        input_rect = pygame.Rect(LARGEUR // 2 - 300, HAUTEUR // 2 - 25, 600, 60)
+        pygame.draw.rect(screen, NOIR, input_rect)
+        pygame.draw.rect(screen, BLANC, input_rect, 2)
+        
+        txt_surf = button_font.render(input_text, True, BLANC)
+        screen.blit(txt_surf, (input_rect.x + 20, input_rect.y + 10))
+        
+        prompt = "Enter Room Name to JOIN" if menu_state == "join" else "Enter Room Name to HOST"
+        instr_surf = button_font.render(f"{prompt} and press ENTER", True, BLANC)
+        screen.blit(instr_surf, (LARGEUR // 2 - instr_surf.get_width() // 2, HAUTEUR // 2 - 100))
 
-    for btn in active_buttons:
+        btn = online_buttons[2] # Retour
         pygame.draw.rect(screen, NOIR, btn["rect"])
         label_surf = button_font.render(btn["label"], True, BLANC)
         label_rect = label_surf.get_rect(center=btn["rect"].center)
         screen.blit(label_surf, label_rect)
-        # Apparition de chaque bouton en fonction des coordonees definis avant
+
+    # Error message display
+    if error_msg and time.time() < error_timer:
+        err_surf = button_font.render(error_msg, True, ROUGE)
+        screen.blit(err_surf, (LARGEUR // 2 - err_surf.get_width() // 2, HAUTEUR // 2 + 215))
+    elif error_msg:
+        error_msg = ""
 
     pygame.display.flip()
 
 def main():
-    # Fonction principale pour faire tourner  le menu en boucle et recuperer les cliques
     clock = pygame.time.Clock()
-    #  Setup d'un FPS cap pour le menu
-
-    global menu_state
+    global menu_state, input_text, error_msg, error_timer
 
     while True:
         for event in pygame.event.get():
-            # Recupere tous les cliques/touches appuyer
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-                # Ferme le menu/jeu si on clique sur la croix/quitter
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 pos = event.pos
-                # Recupere la position du clique pour verifier si il est sur un bouton
                 if menu_state == "main":
-                    active_buttons = boutons
-                else:
-                    active_buttons = online_buttons
-
-                for btn in active_buttons:
-                    if btn["rect"].collidepoint(pos):
-                        print(f"Clicked: {btn['label']}")
-                        if menu_state == "main":
+                    for btn in boutons:
+                        if btn["rect"].collidepoint(pos):
                             if btn["label"] == "Solo":
                                 game.game(is_host=True, is_solo=True)
-                                # We need to restore the menu screen after game returns
                                 pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
                             elif btn["label"] == "En ligne":
                                 menu_state = "online"
                             elif btn["label"] == "Quitter":
                                 quitgame()
-                        else:
+                elif menu_state == "online":
+                    for btn in online_buttons:
+                        if btn["rect"].collidepoint(pos):
                             if btn["label"] == "Host":
-                                game.game(is_host=True, is_solo=False)
-                                pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
+                                input_text = ""
+                                menu_state = "host_setup"
                             elif btn["label"] == "Rejoindre":
-                                ip = input("Enter Server IP (default 127.0.0.1): ") or "127.0.0.1"
-                                game.game(is_host=False, server_ip=ip)
-                                pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
+                                input_text = ""
+                                menu_state = "join"
                             elif btn["label"] == "Retour":
                                 menu_state = "main"
+                elif menu_state in ["join", "host_setup"]:
+                    if online_buttons[2]["rect"].collidepoint(pos):
+                        menu_state = "online"
+            
+            elif event.type == pygame.KEYDOWN and menu_state in ["join", "host_setup"]:
+                if event.key == pygame.K_RETURN:
+                    if input_text.strip():
+                        success = True
+                        if menu_state == "host_setup":
+                            game.game(is_host=True, is_solo=False, room_name=input_text)
+                        else:
+                            # Show "Searching..." feedback?
+                            error_msg = "Searching for room..."
+                            error_timer = time.time() + 10 # Temporary message
+                            draw_menu() # Force update
+                            
+                            res = game.game(is_host=False, room_name=input_text)
+                            if res is False:
+                                error_msg = f"Error: Room '{input_text}' not found!"
+                                error_timer = time.time() + 3.0
+                                success = False
+                        
+                        if success:
+                            pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
+                elif event.key == pygame.K_BACKSPACE:
+                    input_text = input_text[:-1]
+                elif event.key == pygame.K_ESCAPE:
+                    menu_state = "online"
+                else:
+                    if event.unicode.isalnum() or event.unicode in "_- ":
+                        input_text += event.unicode
+
         draw_menu()
         clock.tick(60)
-        # Fait tourner le menu a 60 fps
-
 
 if __name__ == "__main__":
     main()
