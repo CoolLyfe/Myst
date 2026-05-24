@@ -10,14 +10,19 @@ from server import ServerNetwork
 from client import ClientNetwork, run_client_network
 
 
-def game(is_host=False, server_ip="127.0.0.1"):
+def game(is_host=False, server_ip="127.0.0.1", is_solo=False):
     # --- Initialisation Réseau ---
     if is_host:
-        server = ServerNetwork()
+        host_addr = "127.0.0.1" if is_solo else "0.0.0.0"
+        max_players = 1 if is_solo else 999
+        server = ServerNetwork(host=host_addr, max_clients=max_players)
         def start_server():
             asyncio.run(server.start())
         threading.Thread(target=start_server, daemon=True).start()
-        print("[GAME] Host server started.")
+        if is_solo:
+            print("[GAME] Solo server started (Private).")
+        else:
+            print("[GAME] Host server started (Public).")
         time.sleep(1)
 
     network = ClientNetwork(server_ip=server_ip)
@@ -233,7 +238,7 @@ if __name__ == "__main__":
         # Default for convenience
         choice = input("1. Host\n2. Join\nChoice: ")
         if choice == "1":
-            game(is_host=True)
+            game(is_host=True, is_solo=False)
         else:
             ip = input("IP (default 127.0.0.1): ") or "127.0.0.1"
             game(is_host=False, server_ip=ip)

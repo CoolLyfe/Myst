@@ -73,7 +73,7 @@ def main():
 
                         if btn["label"] == "Solo":
                             # Solo is just hosting a game for yourself
-                            game.game(is_host=True)
+                            game.game(is_host=True, is_solo=True)
 
                         if btn["label"] == "En ligne":
                             # For simplicity, we can ask in console or add more buttons.

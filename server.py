@@ -66,6 +66,9 @@ class ServerNetwork:
 
         if msg_type == "join":
             if addr not in self.clients:
+                if len(self.clients) >= self.max_clients:
+                    # Ignore join request if full
+                    return
                 pid = str(self.next_player_id)
                 self.next_player_id += 1
                 self.clients[addr] = pid
