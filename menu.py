@@ -6,9 +6,9 @@ import time
 
 pygame.init()
 def quitgame():
-    pygame.quit()
     if 'video' in globals() and video is not None:
         video.close()
+    pygame.quit()
     sys.exit()
 
 video = pyvidplayer.Video("assets/fire_background.mp4")
@@ -108,8 +108,7 @@ def main():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                quitgame()
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 pos = event.pos
                 clicked_any = False

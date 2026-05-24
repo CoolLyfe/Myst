@@ -157,13 +157,25 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                         if btn["rect"].collidepoint(pos):
                             click_feedback_btn = btn
                             click_feedback_timer = time.time() + 0.1
-                            # Force a draw for immediate feedback
-                            # (Rendu logic is further down, so we'll just wait a bit)
+                            
+                            # Force immediate redraw for visual feedback
+                            # (Duplicate rendering logic briefly for feedback)
+                            overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                            overlay.fill((0, 0, 0, 150))
+                            screen.blit(overlay, (0, 0))
+                            for b in pause_buttons:
+                                color = (80, 80, 80) if b == btn else (30, 30, 30)
+                                pygame.draw.rect(screen, color, b["rect"])
+                                pygame.draw.rect(screen, (255, 255, 255), b["rect"], 2)
+                                l_surf = pause_font.render(b["label"], True, (255, 255, 255))
+                                l_rect = l_surf.get_rect(center=b["rect"].center)
+                                screen.blit(l_surf, l_rect)
+                            pygame.display.flip()
+                            time.sleep(0.05)
+
                             if btn["label"] == "Resume":
-                                time.sleep(0.05)
                                 paused = False
                             elif btn["label"] == "Quit to Menu":
-                                time.sleep(0.05)
                                 return # This will trigger the 'finally' block
 
             if not paused:
