@@ -36,7 +36,6 @@ def procedural_gen ():
     
     #for i in range (5):
     #   print(map[i])
-    print(start)
     return map, start
 
 def create_map_image(map, cell_size=2500):

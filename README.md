@@ -1,6 +1,8 @@
 # Myst
 Myst indie game by the Four Man Army Studio.
 
+pip install pygame ffpyplayer pymediainfo
+
 Anti cheat + Chat verification :
 while 1 == 1
 for player in game:
