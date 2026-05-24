@@ -95,17 +95,21 @@ def main():
                         print(f"Clicked: {btn['label']}")
                         if menu_state == "main":
                             if btn["label"] == "Solo":
-                                game.game()
-                                return
+                                game.game(is_host=True, is_solo=True)
+                                # We need to restore the menu screen after game returns
+                                pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
                             elif btn["label"] == "En ligne":
                                 menu_state = "online"
                             elif btn["label"] == "Quitter":
                                 quitgame()
                         else:
                             if btn["label"] == "Host":
-                                print("Host selected")
+                                game.game(is_host=True, is_solo=False)
+                                pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
                             elif btn["label"] == "Rejoindre":
-                                print("Rejoindre selected")
+                                ip = input("Enter Server IP (default 127.0.0.1): ") or "127.0.0.1"
+                                game.game(is_host=False, server_ip=ip)
+                                pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
                             elif btn["label"] == "Retour":
                                 menu_state = "main"
         draw_menu()
