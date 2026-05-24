@@ -208,6 +208,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 network.data.update_local_state(player.rect.center, player.direction, player.attacking, moved, running, player.health)
             else:
                 player.stop_footsteps()
+                player.update_animation(0, False) # Force standing frame
                 # Still get network state to stay synced
                 net_state = network.data.get_game_state()
                 remote_data = net_state["players"]
