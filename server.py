@@ -13,7 +13,7 @@ class Data:
     def get_local_input(self):
         with self.lock:
             return self.local_input.copy()
-        
+
     def set_local_input(self, input):
         with self.lock:
             self.local_input = input
@@ -22,18 +22,18 @@ class Network:
     def __init__(self):
         self.addr = ("127.0.0.1", 8000)
         pass
-    
+
     async def _listener(self):
         while self.running:
             try:
                 raw_data, addr = await asyncio.wait_for(self.loop.sock_recvfrom(self.socket, 1024), timeout=1.0)
                 data = raw_data.decode()
                 print(f"Received {data} from {addr}")
-                                
-                
+
+
             except asyncio.TimeoutError:
                     continue
-                
+
             except ConnectionError:
                 # Client disconnected
                 continue
@@ -74,4 +74,3 @@ thread = threading.Thread(target=network.run, daemon=True)
 thread.start()
 
 thread.join()
-
