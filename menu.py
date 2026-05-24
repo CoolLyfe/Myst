@@ -72,7 +72,20 @@ def main():
                         # Ajouter un "return FONCTION" a la place  du "{btn['label']}" pour lancer des fonctions avec les boutons
 
                         if btn["label"] == "Solo":
-                            game.game()
+                            # Solo is just hosting a game for yourself
+                            game.game(is_host=True)
+
+                        if btn["label"] == "En ligne":
+                            # For simplicity, we can ask in console or add more buttons.
+                            # Let's add a simple toggle or just default to a choice.
+                            print("1. Host Game")
+                            print("2. Join Game")
+                            choice = input("Select (1/2): ")
+                            if choice == "1":
+                                game.game(is_host=True)
+                            else:
+                                ip = input("Enter Server IP (default 127.0.0.1): ") or "127.0.0.1"
+                                game.game(is_host=False, server_ip=ip)
 
                         if btn["label"] == "Quitter":
                             quitgame()
