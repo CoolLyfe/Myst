@@ -114,6 +114,15 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
     # --- Boucle principale ---
     clock = pygame.time.Clock()
+    paused = False
+    
+    # Pause menu buttons
+    pause_buttons = [
+        {"label": "Resume", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 - 100, 300, 80)},
+        {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)}
+    ]
+    pause_font = pygame.font.SysFont("Chiller", 60)
+
     try:
         while True:
             if not network.running:
@@ -123,7 +132,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             delta_ms = clock.tick(60)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    if is_host and server.loop and server.loop.is_running():
+                    if is_host and 'server' in locals() and server.loop and server.loop.is_running():
                         asyncio.run_coroutine_threadsafe(server.stop(), server.loop)
                         time.sleep(0.2)
                     network.leave()
@@ -131,59 +140,78 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     sys.exit()
 
                 if event.type == pygame.KEYDOWN:
-                    if (event.key == pygame.K_SPACE) and not player.attacking:
-                        player.create_attack_hitbox(width=40, height=90)
-                        player.sword_swing_sfx.play()
+                    if event.key == pygame.K_ESCAPE:
+                        paused = not paused
+                    if not paused:
+                        if (event.key == pygame.K_SPACE) and not player.attacking:
+                            player.create_attack_hitbox(width=40, height=90)
+                            player.sword_swing_sfx.play()
 
-            # Récupération état réseau
-            net_state = network.data.get_game_state()
-            remote_data = net_state["players"]
-            monsters_data = net_state["monsters"]
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and paused:
+                    pos = event.pos
+                    for btn in pause_buttons:
+                        if btn["rect"].collidepoint(pos):
+                            if btn["label"] == "Resume":
+                                paused = False
+                            elif btn["label"] == "Quit to Menu":
+                                return # This will trigger the 'finally' block
 
-            # Contrôles joueur local
-            keys = pygame.key.get_pressed()
-            dx = dy = 0
-            speedcross = int(player.speed * 0.7071)
-            moved = False
+            if not paused:
+                # Récupération état réseau
+                net_state = network.data.get_game_state()
+                remote_data = net_state["players"]
+                monsters_data = net_state["monsters"]
 
-            if not player.attacking:
-                if (keys[pygame.K_z] or keys[pygame.K_UP]):
-                    if (keys[pygame.K_q] or keys[pygame.K_LEFT]):
-                        dx -= speedcross; dy -= speedcross
+                # Contrôles joueur local
+                keys = pygame.key.get_pressed()
+                dx = dy = 0
+                speedcross = int(player.speed * 0.7071)
+                moved = False
+
+                if not player.attacking:
+                    if (keys[pygame.K_z] or keys[pygame.K_UP]):
+                        if (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                            dx -= speedcross; dy -= speedcross
+                        elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                            dx += speedcross; dy -= speedcross
+                        else:
+                            dy -= player.speed
+                        moved = True
+                    elif (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+                        if (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                            dx -= speedcross; dy += speedcross
+                        elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                            dx += speedcross; dy += speedcross
+                        else:
+                            dy += player.speed
+                        moved = True
+                    elif (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                        dx -= player.speed
+                        moved = True
                     elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-                        dx += speedcross; dy -= speedcross
-                    else:
-                        dy -= player.speed
-                    moved = True
-                elif (keys[pygame.K_s] or keys[pygame.K_DOWN]):
-                    if (keys[pygame.K_q] or keys[pygame.K_LEFT]):
-                        dx -= speedcross; dy += speedcross
-                    elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-                        dx += speedcross; dy += speedcross
-                    else:
-                        dy += player.speed
-                    moved = True
-                elif (keys[pygame.K_q] or keys[pygame.K_LEFT]):
-                    dx -= player.speed
-                    moved = True
-                elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-                    dx += player.speed
-                    moved = True
-            
-            if moved:
-                moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                        dx += player.speed
+                        moved = True
+                
+                if moved:
+                    moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
 
-            running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
-            player.set_running(running)
-            player.update_animation(delta_ms, moved)
+                running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+                player.set_running(running)
+                player.update_animation(delta_ms, moved)
 
-            if moved and not player.attacking:
-                player.start_footsteps()
+                if moved and not player.attacking:
+                    player.start_footsteps()
+                else:
+                    player.stop_footsteps()
+
+                # Envoi état local au serveur
+                network.data.update_local_state(player.rect.center, player.direction, player.attacking, moved, running, player.health)
             else:
                 player.stop_footsteps()
-
-            # Envoi état local au serveur
-            network.data.update_local_state(player.rect.center, player.direction, player.attacking, moved, running, player.health)
+                # Still get network state to stay synced
+                net_state = network.data.get_game_state()
+                remote_data = net_state["players"]
+                monsters_data = net_state["monsters"]
 
             # Rendu
             screensize = pygame.display.get_window_size()
@@ -242,7 +270,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 screen.blit(m.image, m_blit_rect)
                 
                 # Collision attaque joueur local -> monstre
-                if player.attacking:
+                if not paused and player.attacking:
                     if player.check_attack_collision(m):
                         network.hit_monster(mid, player.attack)
 
@@ -258,6 +286,20 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 screen.blit(heart_scaled, (SCREEN_W // 40 + i * (heart_scaled.get_width() + 5), SCREEN_H // 40))
             for i in range(player.nb_potions):
                 screen.blit(heal_potion_scaled, (SCREEN_W // 40 + i * (heal_potion_scaled.get_width() + 5), SCREEN_H // 35 + heart_scaled.get_height()))
+
+            # Draw Pause Menu Overlay
+            if paused:
+                # Semi-transparent overlay
+                overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 150))
+                screen.blit(overlay, (0, 0))
+                
+                for btn in pause_buttons:
+                    pygame.draw.rect(screen, (50, 50, 50), btn["rect"])
+                    pygame.draw.rect(screen, (255, 255, 255), btn["rect"], 2)
+                    label_surf = pause_font.render(btn["label"], True, (255, 255, 255))
+                    label_rect = label_surf.get_rect(center=btn["rect"].center)
+                    screen.blit(label_surf, label_rect)
 
             pygame.display.flip()
     finally:
