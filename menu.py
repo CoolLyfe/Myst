@@ -25,48 +25,62 @@ ROUGE = (200, 50, 50)
 title_font = pygame.font.SysFont("Chiller", 1500, bold=True, italic=True)
 button_font = pygame.font.SysFont("Chiller", 50)
 
+# Button layout constants
+BTN_W = LARGEUR // 3
+BTN_H = HAUTEUR // 12
+GAP = 30
+START_Y = HAUTEUR // 2 - 40
+
 boutons = [
-    {"label": "Solo", "rect": pygame.Rect(LARGEUR // 2 - LARGEUR // 6, HAUTEUR // 2, LARGEUR // 3, HAUTEUR // 8)},
-    {"label": "En ligne", "rect": pygame.Rect(LARGEUR // 2 - LARGEUR // 6, (HAUTEUR // 4) * 3 - 5, LARGEUR // 3, HAUTEUR // 12)},
-    {"label": "Notre équipe", "rect": pygame.Rect(LARGEUR // 4 - LARGEUR // 16, (HAUTEUR // 4) * 3, LARGEUR // 8, HAUTEUR // 12)},
-    {"label": "Paramètres", "rect": pygame.Rect((LARGEUR // 4)*3 - LARGEUR // 16, (HAUTEUR // 4) * 3, LARGEUR // 8, HAUTEUR // 12)},
-    {"label": "Quitter", "rect": pygame.Rect(LARGEUR // 2 - LARGEUR // 16, (HAUTEUR // 8) * 7, LARGEUR // 8, HAUTEUR // 12)},
+    {"label": "Solo", "rect": pygame.Rect(LARGEUR // 2 - BTN_W // 2, START_Y, BTN_W, BTN_H)},
+    {"label": "En ligne", "rect": pygame.Rect(LARGEUR // 2 - BTN_W // 2, START_Y + BTN_H + GAP, BTN_W, BTN_H)},
+    {"label": "Notre équipe", "rect": pygame.Rect(LARGEUR // 2 - BTN_W // 2, START_Y + 2 * (BTN_H + GAP), BTN_W // 2 - 10, BTN_H)},
+    {"label": "Paramètres", "rect": pygame.Rect(LARGEUR // 2 + 10, START_Y + 2 * (BTN_H + GAP), BTN_W // 2 - 10, BTN_H)},
+    {"label": "Quitter", "rect": pygame.Rect(LARGEUR // 2 - BTN_W // 2, START_Y + 3 * (BTN_H + GAP), BTN_W, BTN_H)},
 ]
 
 online_buttons = [
-    {"label": "Host", "rect": pygame.Rect(LARGEUR // 2 - LARGEUR // 6, HAUTEUR // 2 - HAUTEUR // 12, LARGEUR // 3, HAUTEUR // 10)},
-    {"label": "Rejoindre", "rect": pygame.Rect(LARGEUR // 2 - LARGEUR // 6, HAUTEUR // 2 + HAUTEUR // 12, LARGEUR // 3, HAUTEUR // 10)},
-    {"label": "Retour", "rect": pygame.Rect(LARGEUR // 2 - LARGEUR // 8, (HAUTEUR // 8) * 7, LARGEUR // 4, HAUTEUR // 12)},
+    {"label": "Host", "rect": pygame.Rect(LARGEUR // 2 - BTN_W // 2, START_Y, BTN_W, BTN_H)},
+    {"label": "Rejoindre", "rect": pygame.Rect(LARGEUR // 2 - BTN_W // 2, START_Y + BTN_H + GAP, BTN_W, BTN_H)},
+    {"label": "Retour", "rect": pygame.Rect(LARGEUR // 2 - BTN_W // 2, START_Y + 2 * (BTN_H + GAP), BTN_W, BTN_H)},
 ]
 
 menu_state = "main"
 input_text = ""
 error_msg = ""
 error_timer = 0
+click_feedback_btn = None
+click_feedback_timer = 0
 
 def draw_menu():
-    global error_msg, error_timer
+    global error_msg, error_timer, click_feedback_btn, click_feedback_timer
     video.draw(screen, (0, 0))
 
     title_surf = title_font.render("Myst", True, BLANC)
     title_scaled = pygame.transform.scale(title_surf, (LARGEUR // 3, HAUTEUR // 5))
     screen.blit(title_scaled, (LARGEUR // 2 - title_scaled.get_width() // 2, HAUTEUR // 4 - title_scaled.get_height() // 2))
 
+    current_time = time.time()
+    
+    # Helper to draw themed buttons
+    def draw_button(btn):
+        # Feedback color if clicked recently
+        color = (80, 80, 80) if (click_feedback_btn == btn and current_time < click_feedback_timer) else (30, 30, 30)
+        pygame.draw.rect(screen, color, btn["rect"])
+        pygame.draw.rect(screen, BLANC, btn["rect"], 2)
+        label_surf = button_font.render(btn["label"], True, BLANC)
+        label_rect = label_surf.get_rect(center=btn["rect"].center)
+        screen.blit(label_surf, label_rect)
+
     if menu_state == "main":
         for btn in boutons:
-            pygame.draw.rect(screen, NOIR, btn["rect"])
-            label_surf = button_font.render(btn["label"], True, BLANC)
-            label_rect = label_surf.get_rect(center=btn["rect"].center)
-            screen.blit(label_surf, label_rect)
+            draw_button(btn)
     elif menu_state == "online":
         for btn in online_buttons:
-            pygame.draw.rect(screen, NOIR, btn["rect"])
-            label_surf = button_font.render(btn["label"], True, BLANC)
-            label_rect = label_surf.get_rect(center=btn["rect"].center)
-            screen.blit(label_surf, label_rect)
+            draw_button(btn)
     elif menu_state in ["join", "host_setup"]:
         input_rect = pygame.Rect(LARGEUR // 2 - 300, HAUTEUR // 2 - 25, 600, 60)
-        pygame.draw.rect(screen, NOIR, input_rect)
+        pygame.draw.rect(screen, (30, 30, 30), input_rect)
         pygame.draw.rect(screen, BLANC, input_rect, 2)
         
         txt_surf = button_font.render(input_text, True, BLANC)
@@ -76,11 +90,7 @@ def draw_menu():
         instr_surf = button_font.render(f"{prompt} and press ENTER", True, BLANC)
         screen.blit(instr_surf, (LARGEUR // 2 - instr_surf.get_width() // 2, HAUTEUR // 2 - 100))
 
-        btn = online_buttons[2] # Retour
-        pygame.draw.rect(screen, NOIR, btn["rect"])
-        label_surf = button_font.render(btn["label"], True, BLANC)
-        label_rect = label_surf.get_rect(center=btn["rect"].center)
-        screen.blit(label_surf, label_rect)
+        draw_button(online_buttons[2]) # Retour
 
     # Error message display
     if error_msg and time.time() < error_timer:
@@ -93,7 +103,7 @@ def draw_menu():
 
 def main():
     clock = pygame.time.Clock()
-    global menu_state, input_text, error_msg, error_timer
+    global menu_state, input_text, error_msg, error_timer, click_feedback_btn, click_feedback_timer
 
     while True:
         for event in pygame.event.get():
@@ -102,9 +112,18 @@ def main():
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 pos = event.pos
+                clicked_any = False
+                
                 if menu_state == "main":
                     for btn in boutons:
                         if btn["rect"].collidepoint(pos):
+                            click_feedback_btn = btn
+                            click_feedback_timer = time.time() + 0.1
+                            clicked_any = True
+                            draw_menu() # Immediate visual feedback
+                            pygame.display.flip()
+                            time.sleep(0.05) # Small pause for feel
+
                             if btn["label"] == "Solo":
                                 game.game(is_host=True, is_solo=True)
                                 pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
@@ -115,6 +134,13 @@ def main():
                 elif menu_state == "online":
                     for btn in online_buttons:
                         if btn["rect"].collidepoint(pos):
+                            click_feedback_btn = btn
+                            click_feedback_timer = time.time() + 0.1
+                            clicked_any = True
+                            draw_menu()
+                            pygame.display.flip()
+                            time.sleep(0.05)
+
                             if btn["label"] == "Host":
                                 input_text = ""
                                 menu_state = "host_setup"
@@ -124,7 +150,13 @@ def main():
                             elif btn["label"] == "Retour":
                                 menu_state = "main"
                 elif menu_state in ["join", "host_setup"]:
-                    if online_buttons[2]["rect"].collidepoint(pos):
+                    btn = online_buttons[2]
+                    if btn["rect"].collidepoint(pos):
+                        click_feedback_btn = btn
+                        click_feedback_timer = time.time() + 0.1
+                        draw_menu()
+                        pygame.display.flip()
+                        time.sleep(0.05)
                         menu_state = "online"
             
             elif event.type == pygame.KEYDOWN and menu_state in ["join", "host_setup"]:

@@ -122,6 +122,9 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
         {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)}
     ]
     pause_font = pygame.font.SysFont("Chiller", 60)
+    
+    click_feedback_btn = None
+    click_feedback_timer = 0
 
     try:
         while True:
@@ -130,6 +133,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 break
 
             delta_ms = clock.tick(60)
+            current_time = time.time()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     if is_host and 'server' in locals() and server.loop and server.loop.is_running():
@@ -151,9 +155,15 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     pos = event.pos
                     for btn in pause_buttons:
                         if btn["rect"].collidepoint(pos):
+                            click_feedback_btn = btn
+                            click_feedback_timer = time.time() + 0.1
+                            # Force a draw for immediate feedback
+                            # (Rendu logic is further down, so we'll just wait a bit)
                             if btn["label"] == "Resume":
+                                time.sleep(0.05)
                                 paused = False
                             elif btn["label"] == "Quit to Menu":
+                                time.sleep(0.05)
                                 return # This will trigger the 'finally' block
 
             if not paused:
@@ -296,7 +306,8 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 screen.blit(overlay, (0, 0))
                 
                 for btn in pause_buttons:
-                    pygame.draw.rect(screen, (50, 50, 50), btn["rect"])
+                    color = (80, 80, 80) if (click_feedback_btn == btn and current_time < click_feedback_timer) else (30, 30, 30)
+                    pygame.draw.rect(screen, color, btn["rect"])
                     pygame.draw.rect(screen, (255, 255, 255), btn["rect"], 2)
                     label_surf = pause_font.render(btn["label"], True, (255, 255, 255))
                     label_rect = label_surf.get_rect(center=btn["rect"].center)
