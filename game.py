@@ -38,7 +38,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
     # --- Initialisation Pygame ---
     pygame.init()
-    
+
     print("[GAME] Waiting for server map data...")
     start_wait = time.time()
     while network.data.map_data is None:
@@ -46,13 +46,13 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
         if time.time() - start_wait > 10:
             print("[GAME] Connection timed out! Make sure the server is running.")
             return
-    
+
     print("[GAME] Connection successful! Map received.")
-    
+
     map_data = network.data.map_data
     start_data = network.data.start_data
     cell_size = 2000
-    
+
     # --- Loading Map in Background ---
     # We use a thread to create the map image so we can keep pumping events
     # This prevents the "Not Responding" OS message.
@@ -60,21 +60,21 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     def load_map_thread():
         nonlocal map_surface_pil
         map_surface_pil = create_map_image(map_data, cell_size)
-    
+
     # Create a temporary window for loading feedback
     temp_screen = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
     font = pygame.font.SysFont("Chiller", 100)
     loading_text = font.render("Loading Map... Please wait", True, (255, 255, 255))
-    
+
     thread = threading.Thread(target=load_map_thread)
     thread.start()
-    
+
     while map_surface_pil is None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        
+
         temp_screen.fill((0, 0, 0))
         text_rect = loading_text.get_rect(center=(1920 // 2, 1080 // 2))
         temp_screen.blit(loading_text, text_rect)
@@ -115,14 +115,14 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     # --- Boucle principale ---
     clock = pygame.time.Clock()
     paused = False
-    
+
     # Pause menu buttons
     pause_buttons = [
         {"label": "Resume", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 - 100, 300, 80)},
         {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)}
     ]
     pause_font = pygame.font.SysFont("Chiller", 60)
-    
+
     click_feedback_btn = None
     click_feedback_timer = 0
 
@@ -177,7 +177,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                         if btn["rect"].collidepoint(pos):
                             click_feedback_btn = btn
                             click_feedback_timer = time.time() + 0.1
-                            
+
                             # Force immediate redraw for visual feedback
                             # (Duplicate rendering logic briefly for feedback)
                             overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
@@ -241,7 +241,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                         elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
                             dx += speedcross
                             moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                            dx -= speedcross  
+                            dx -= speedcross
                             dy += speedcross
                             moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
                             dy -= speedcross
@@ -285,7 +285,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             with network.data.lock:
                 hits = list(network.data.pending_hits)
                 network.data.pending_hits.clear()
-            
+
             for hit in hits:
                 if player.hit_timer <= 0:
                     player.take_damage(hit.get("damage", 1))
@@ -321,14 +321,14 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             for pid, pdata in remote_data.items():
                 if pid not in remote_players:
                     remote_players[pid] = Player(pdata["pos"][0], pdata["pos"][1], 115)
-                
+
                 rp = remote_players[pid]
                 rp.rect.center = pdata["pos"]
                 rp.direction = pdata["dir"]
                 rp.attacking = pdata["attacking"]
                 rp.set_running(pdata.get("running", False))
                 rp.update_animation(delta_ms, pdata.get("moving", False))
-                
+
                 rp_screen_x = rp.rect.centerx - cam_x
                 rp_screen_y = rp.rect.centery - cam_y
                 rp_blit_rect = rp.image.get_rect(center=(rp_screen_x, rp_screen_y))
@@ -344,19 +344,21 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             else:
                 img = player.image.copy()
                 img_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
-            
+
             if player.alive:
                 if player.hit_timer > 0:
                     tinted_img = img.copy()
                     tinted_img.fill((40, 0, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
                     screen.blit(tinted_img, img_rect)
-                    
+
                     # Draw red overlay on screen edges
                     overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                    pygame.draw.rect(overlay, (255, 0, 0, 220), overlay.get_rect(), 20)
-                    pygame.draw.rect(overlay, (255, 0, 0, 120), overlay.get_rect().inflate(-40, -40), 20)
+                    # Three layers of 8px to create a smoother, slimmer fade (24px total)
+                    pygame.draw.rect(overlay, (255, 0, 0, 140), overlay.get_rect(), 8)
+                    pygame.draw.rect(overlay, (255, 0, 0, 80), overlay.get_rect().inflate(-16, -16), 8)
+                    pygame.draw.rect(overlay, (255, 0, 0, 30), overlay.get_rect().inflate(-32, -32), 8)
                     screen.blit(overlay, (0, 0))
-                    
+
                     player.hit_timer -= 1
                 else:
                     screen.blit(img, img_rect)
@@ -367,24 +369,24 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 if mid not in synced_monsters:
                     synced_monsters[mid] = BasicMonster(mdata["pos"][0], mdata["pos"][1], 150)
                     synced_monsters[mid].health = mdata.get("health", 80)
-                
+
                 m = synced_monsters[mid]
-                
+
                 # Update hit timer and health from server
                 if m.health > mdata.get("health", 0):
                     m.hit_timer = 10
                 m.health = mdata.get("health", 0)
-                
+
                 m.rect.center = mdata["pos"]
                 m.update_hitbox()
-                
+
                 # Update monster direction based on movement if server provides it
                 m.direction = mdata.get("dir", "down")
-                
+
                 m_screen_x = m.rect.centerx - cam_x
                 m_screen_y = m.rect.centery - cam_y
                 m_blit_rect = m.image.get_rect(center=(m_screen_x, m_screen_y))
-                
+
                 if m.hit_timer > 0:
                     # Create a red-tinted version of the image
                     tinted_img = m.image.copy()
@@ -394,7 +396,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     m.hit_timer -= 1
                 else:
                     screen.blit(m.image, m_blit_rect)
-                
+
                 # Collision attaque joueur local -> monstre
                 if player.alive and not paused and player.attacking:
                     if player.attack_hitbox.colliderect(m.hitbox):
@@ -407,23 +409,23 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))
             screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
             screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-            
+
             if not player.alive:
                 death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                death_overlay.fill((200, 0, 0, 200)) # Intense red semi-transparent
+                death_overlay.fill((100, 0, 0, 180)) # Intense red semi-transparent
                 screen.blit(death_overlay, (0, 0))
-                
+
                 death_font = pygame.font.SysFont("Chiller", 150)
                 sub_font = pygame.font.SysFont("Chiller", 60)
-                
+
                 death_surf = death_font.render("YOU DIED", True, (255, 0, 0))
                 death_rect = death_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 - 50))
                 screen.blit(death_surf, death_rect)
-                
+
                 sub_surf = sub_font.render("Press 'R' to Respawn", True, (255, 255, 255))
                 sub_rect = sub_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 + 80))
                 screen.blit(sub_surf, sub_rect)
-            
+
             # HUD
             heart_scaled = pygame.transform.scale(heart_image, (SCREEN_W // 25, SCREEN_H // 25))
             heal_potion_scaled = pygame.transform.scale(heal_potion_image, (SCREEN_W // 25, SCREEN_H // 25))
@@ -438,7 +440,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
                 overlay.fill((0, 0, 0, 150))
                 screen.blit(overlay, (0, 0))
-                
+
                 for btn in pause_buttons:
                     color = (80, 80, 80) if (click_feedback_btn == btn and current_time < click_feedback_timer) else (30, 30, 30)
                     pygame.draw.rect(screen, color, btn["rect"])
