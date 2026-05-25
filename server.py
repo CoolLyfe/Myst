@@ -205,12 +205,39 @@ class ServerNetwork:
         msg = f"MYST_SERVER:{self.room_name}:{self.port}".encode()
         print(f"[SERVER] LAN Announcer started for room: {self.room_name}")
         
-        while self.running:
+        def get_broadcast_ips():
+            ips = ["<broadcast>", "255.255.255.255"]
             try:
-                # Send to the broadcast address of the local network
-                broadcast_sock.sendto(msg, ("<broadcast>", 8002))
+                host_name = socket.gethostname()
+                _, _, ip_list = socket.gethostbyname_ex(host_name)
+                for ip in ip_list:
+                    parts = ip.split('.')
+                    if len(parts) == 4 and ip != "127.0.0.1":
+                        ips.append(f"{parts[0]}.{parts[1]}.{parts[2]}.255")
             except Exception:
                 pass
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))
+                ip = s.getsockname()[0]
+                parts = ip.split('.')
+                if len(parts) == 4:
+                    ips.append(f"{parts[0]}.{parts[1]}.{parts[2]}.255")
+                s.close()
+            except Exception:
+                pass
+            return list(set(ips))
+
+        bcast_ips = get_broadcast_ips()
+        print(f"[SERVER] Announcing on IPs: {bcast_ips}")
+
+        while self.running:
+            for bip in bcast_ips:
+                try:
+                    # Send to the broadcast address of the local network
+                    broadcast_sock.sendto(msg, (bip, 8002))
+                except Exception:
+                    pass
             await asyncio.sleep(2.0)
         broadcast_sock.close()
 
