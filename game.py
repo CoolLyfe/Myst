@@ -413,7 +413,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
             if not player.alive:
                 death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                death_overlay.fill((200, 0, 0, 200)) # Intense red semi-transparent
+                death_overlay.fill((100, 0, 0, 180)) # Dark red semi-transparent
                 screen.blit(death_overlay, (0, 0))
 
                 death_font = pygame.font.SysFont("Chiller", 150)
@@ -425,10 +425,10 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
                 # Draw Death Menu Buttons
                 for btn in death_buttons:
-                    color = (200, 200, 200) if (click_feedback_btn == btn and current_time < click_feedback_timer) else (255, 255, 255)
+                    color = (80, 80, 80) if (click_feedback_btn == btn and current_time < click_feedback_timer) else (30, 30, 30)
                     pygame.draw.rect(screen, color, btn["rect"])
-                    pygame.draw.rect(screen, (0, 0, 0), btn["rect"], 2)
-                    label_surf = pause_font.render(btn["label"], True, (0, 0, 0))
+                    pygame.draw.rect(screen, (255, 255, 255), btn["rect"], 2)
+                    label_surf = pause_font.render(btn["label"], True, (255, 255, 255))
                     label_rect = label_surf.get_rect(center=btn["rect"].center)
                     screen.blit(label_surf, label_rect)
 
