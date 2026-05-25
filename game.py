@@ -106,9 +106,9 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     synced_monsters = {} # id -> BasicMonster
 
     # --- Camera ---
-    def get_camera_offset(player):
-        cam_x = player.rect.centerx - SCREEN_W // 2
-        cam_y = player.rect.centery - SCREEN_H // 2
+    def get_camera_offset(cx, cy):
+        cam_x = cx - SCREEN_W // 2
+        cam_y = cy - SCREEN_H // 2
         cam_x = max(0, min(cam_x, MAP_W - SCREEN_W))
         cam_y = max(0, min(cam_y, MAP_H - SCREEN_H))
         return cam_x, cam_y
@@ -116,6 +116,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     # --- Boucle principale ---
     clock = pygame.time.Clock()
     paused = False
+    spectate_index = 0
 
     # Pause menu buttons
     pause_buttons = [
@@ -180,6 +181,11 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                                         player.drink_potion_sfx.play()
                                     except Exception:
                                         pass
+                        elif getattr(player, 'spectating', False):
+                            if event.key == pygame.K_RIGHT:
+                                spectate_index += 1
+                            elif event.key == pygame.K_LEFT:
+                                spectate_index -= 1
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = event.pos
@@ -226,13 +232,16 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 remote_data = net_state["players"]
                 monsters_data = net_state["monsters"]
 
+                alive_pids = sorted([pid for pid, pdata in remote_data.items() if pdata.get("health", 1) > 0])
+                is_free_cam = getattr(player, 'spectating', False) and not alive_pids
+
                 # Contrôles joueur local
                 keys = pygame.key.get_pressed()
                 dx = dy = 0
                 speedcross = int(player.speed * 0.7071)
                 moved = False
 
-                if player.alive or getattr(player, 'spectating', False):
+                if player.alive or is_free_cam:
                     if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]):
                         if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
                             dx -= speedcross
@@ -333,7 +342,17 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             # Rendu
             screensize = pygame.display.get_window_size()
             SCREEN_W, SCREEN_H = screensize[0], screensize[1]
-            cam_x, cam_y = get_camera_offset(player)
+            
+            if getattr(player, 'spectating', False) and alive_pids:
+                spectate_pid = alive_pids[spectate_index % len(alive_pids)]
+                if spectate_pid in remote_players:
+                    cx, cy = remote_players[spectate_pid].rect.center
+                else:
+                    cx, cy = remote_data[spectate_pid]["pos"]
+            else:
+                cx, cy = player.rect.centerx, player.rect.centery
+            
+            cam_x, cam_y = get_camera_offset(cx, cy)
 
             background_scaled = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
             screen.blit(background_scaled, (0, 0))
@@ -455,7 +474,12 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     label_rect = label_surf.get_rect(center=btn["rect"].center)
                     screen.blit(label_surf, label_rect)
             elif getattr(player, 'spectating', False):
-                spec_surf = pause_font.render("SPECTATING - Press ESC for Menu", True, (255, 255, 255))
+                if alive_pids:
+                    spec_pid = alive_pids[spectate_index % len(alive_pids)]
+                    spec_txt = f"SPECTATING Player {spec_pid} - Use LEFT/RIGHT arrows - ESC for Menu"
+                else:
+                    spec_txt = "SPECTATING (Free Cam) - Use WASD/Arrows - ESC for Menu"
+                spec_surf = pause_font.render(spec_txt, True, (255, 255, 255))
                 screen.blit(spec_surf, (SCREEN_W // 2 - spec_surf.get_width() // 2, 20))
 
             # HUD
