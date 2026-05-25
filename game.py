@@ -88,7 +88,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     pygame.display.set_caption("Myst Multiplayer")
 
     background = pygame.image.load("assets/background_jsp.png").convert()
-    lamap = pygame.image.load("assets/map_game.png").convert_alpha()
+    lamap = pygame.image.fromstring(map_surface_pil.tobytes(), map_surface_pil.size, map_surface_pil.mode).convert_alpha()
     background = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
     fog_image = pygame.image.load("assets/fog_of_war.png").convert_alpha()
     heart_image = pygame.image.load("assets/heart.png").convert_alpha()
