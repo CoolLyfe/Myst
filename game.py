@@ -353,8 +353,8 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     
                     # Draw red overlay on screen edges
                     overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                    pygame.draw.rect(overlay, (200, 0, 0, 100), overlay.get_rect(), 20)
-                    pygame.draw.rect(overlay, (200, 0, 0, 50), overlay.get_rect().inflate(-40, -40), 20)
+                    pygame.draw.rect(overlay, (200, 0, 0, 150), overlay.get_rect(), 20)
+                    pygame.draw.rect(overlay, (200, 0, 0, 80), overlay.get_rect().inflate(-40, -40), 20)
                     screen.blit(overlay, (0, 0))
                     
                     player.hit_timer -= 1
