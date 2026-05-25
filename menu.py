@@ -1,18 +1,18 @@
 import pygame
 import sys
 import game
-# import pyvidplayer
+import pyvidplayer
 import time
 
 pygame.init()
 def quitgame():
-    # if 'video' in globals() and video is not None:
-    #     video.close()
+    if 'video' in globals() and video is not None:
+        video.close()
     pygame.quit()
     sys.exit()
 
-# video = pyvidplayer.Video("assets/fire_background.mp4")
-# video.set_size((1920, 1080))
+video = pyvidplayer.Video("assets/fire_background.mp4")
+video.set_size((1920, 1080))
 LARGEUR, HAUTEUR = 1920, 1080
 screen = pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
 pygame.display.set_caption("Myst")
@@ -54,10 +54,10 @@ click_feedback_timer = 0
 
 def draw_menu():
     global error_msg, error_timer, click_feedback_btn, click_feedback_timer
-    # if not video.active:
-    #     video.restart()
-    # video.draw(screen, (0, 0))
     screen.fill(NOIR)
+    if not video.active:
+        video.restart()
+    video.draw(screen, (0, 0))
 
     title_surf = title_font.render("Myst", True, BLANC)
     title_scaled = pygame.transform.scale(title_surf, (LARGEUR // 3, HAUTEUR // 5))
