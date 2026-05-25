@@ -385,6 +385,13 @@ class ServerNetwork:
             await asyncio.sleep(2.0)
         broadcast_sock.close()
 
+    async def broadcast_restart(self):
+        print("[SERVER] Broadcasting restart to clients...")
+        msg = {"type": "restart"}
+        for addr in self.clients:
+            await self.send_to(msg, addr)
+        await asyncio.sleep(0.1)
+
     async def stop(self):
         print("[SERVER] Shutting down...")
         shutdown_msg = {"type": "shutdown"}

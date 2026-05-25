@@ -13,6 +13,7 @@ class ClientData:
         self.players = {} # Other players: { "id": { "pos": [x,y], "dir": "down", ... } }
         self.monsters = {} # Monsters: { "id": { "pos": [x,y], "alive": True, ... } }
         self.pending_hits = [] # List of hits on the local player
+        self.server_restarting = False
         self.local_player_state = {
             "pos": [0, 0],
             "dir": "down",
@@ -165,6 +166,15 @@ class ClientNetwork:
                 fut.result(timeout=0.5)
             except:
                 pass
+
+def run_client_network(network):
+    asyncio.run(network.start())
+
+if __name__ == "__main__":
+    # Test script
+    client = ClientNetwork()
+    run_client_network(client)
+
 
 def run_client_network(network):
     asyncio.run(network.start())

@@ -99,6 +99,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     player_start_x = start_data[0] * cell_size + cell_size // 2
     player_start_y = start_data[1] * cell_size + cell_size // 2
     player = Player(player_start_x, player_start_y, player_size)
+    player.spectating = False
 
     # --- Entités Multi ---
     remote_players = {} # id -> Player
@@ -122,10 +123,22 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
         {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)}
     ]
     # Death menu buttons
-    death_buttons = [
-        {"label": "Try Again", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
-        {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)}
-    ]
+    if is_solo:
+        death_buttons = [
+            {"label": "Try Again", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
+            {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)}
+        ]
+    elif is_host:
+        death_buttons = [
+            {"label": "Try Again", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
+            {"label": "Spectate", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)},
+            {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 260, 300, 80)}
+        ]
+    else:
+        death_buttons = [
+            {"label": "Spectate", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
+            {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)}
+        ]
     pause_font = pygame.font.SysFont("Chiller", 60)
 
     click_feedback_btn = None
@@ -134,6 +147,9 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     try:
         while True:
             if not network.running:
+                if getattr(network.data, 'server_restarting', False):
+                    print("[GAME] Server is restarting, reconnecting...")
+                    return "retry"
                 print("[GAME] Disconnected from server.")
                 break
 
@@ -191,11 +207,16 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                                     paused = False
                                 elif btn["label"] == "Quit to Menu":
                                     return
-                    elif not player.alive:
+                    elif not player.alive and not getattr(player, 'spectating', False):
                         for btn in death_buttons:
                             if btn["rect"].collidepoint(pos):
                                 if btn["label"] == "Try Again":
+                                    if is_host and not is_solo and 'server' in locals():
+                                        asyncio.run_coroutine_threadsafe(server.broadcast_restart(), server.loop)
+                                        time.sleep(0.2)
                                     return "retry"
+                                elif btn["label"] == "Spectate":
+                                    player.spectating = True
                                 elif btn["label"] == "Quit to Menu":
                                     return
             if not paused:
@@ -211,7 +232,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 speedcross = int(player.speed * 0.7071)
                 moved = False
 
-                if player.alive:
+                if player.alive or getattr(player, 'spectating', False):
                     if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]):
                         if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
                             dx -= speedcross
@@ -267,7 +288,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
                 player.update_animation(delta_ms, moved)
 
-                if moved and not player.attacking:
+                if moved and not player.attacking and player.alive:
                     player.start_footsteps()
                 else:
                     player.stop_footsteps()
@@ -320,6 +341,8 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
             # Affichage joueurs distants
             for pid, pdata in remote_data.items():
+                if pdata.get("health", 1) <= 0:
+                    continue
                 if pid not in remote_players:
                     remote_players[pid] = Player(pdata["pos"][0], pdata["pos"][1], 115)
 
@@ -411,7 +434,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
             screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
-            if not player.alive:
+            if not player.alive and not getattr(player, 'spectating', False):
                 death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
                 death_overlay.fill((100, 0, 0, 180)) # Dark red semi-transparent
                 screen.blit(death_overlay, (0, 0))
@@ -431,14 +454,18 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     label_surf = pause_font.render(btn["label"], True, (255, 255, 255))
                     label_rect = label_surf.get_rect(center=btn["rect"].center)
                     screen.blit(label_surf, label_rect)
+            elif getattr(player, 'spectating', False):
+                spec_surf = pause_font.render("SPECTATING - Press ESC for Menu", True, (255, 255, 255))
+                screen.blit(spec_surf, (SCREEN_W // 2 - spec_surf.get_width() // 2, 20))
 
             # HUD
-            heart_scaled = pygame.transform.scale(heart_image, (SCREEN_W // 25, SCREEN_H // 25))
-            heal_potion_scaled = pygame.transform.scale(heal_potion_image, (SCREEN_W // 25, SCREEN_H // 25))
-            for i in range(player.health):
-                screen.blit(heart_scaled, (SCREEN_W // 40 + i * (heart_scaled.get_width() + 5), SCREEN_H // 40))
-            for i in range(player.nb_potions):
-                screen.blit(heal_potion_scaled, (SCREEN_W // 40 + i * (heal_potion_scaled.get_width() + 5), SCREEN_H // 35 + heart_scaled.get_height()))
+            if player.alive:
+                heart_scaled = pygame.transform.scale(heart_image, (SCREEN_W // 25, SCREEN_H // 25))
+                heal_potion_scaled = pygame.transform.scale(heal_potion_image, (SCREEN_W // 25, SCREEN_H // 25))
+                for i in range(player.health):
+                    screen.blit(heart_scaled, (SCREEN_W // 40 + i * (heart_scaled.get_width() + 5), SCREEN_H // 40))
+                for i in range(player.nb_potions):
+                    screen.blit(heal_potion_scaled, (SCREEN_W // 40 + i * (heal_potion_scaled.get_width() + 5), SCREEN_H // 35 + heart_scaled.get_height()))
 
             # Draw Pause Menu Overlay
             if paused:
