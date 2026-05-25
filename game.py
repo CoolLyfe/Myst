@@ -345,38 +345,21 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 img = player.image.copy()
                 img_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
             
-            if player.hit_timer > 0:
-                tinted_img = img.copy()
-                tinted_img.fill((40, 0, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
-                screen.blit(tinted_img, img_rect)
-                
-                # Draw red overlay on screen edges
-                overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                pygame.draw.rect(overlay, (255, 0, 0, 200), overlay.get_rect(), 40)
-                pygame.draw.rect(overlay, (255, 0, 0, 150), overlay.get_rect().inflate(-80, -80), 40)
-                pygame.draw.rect(overlay, (255, 0, 0, 100), overlay.get_rect().inflate(-160, -160), 40)
-                pygame.draw.rect(overlay, (255, 0, 0, 50), overlay.get_rect().inflate(-240, -240), 40)
-                screen.blit(overlay, (0, 0))
-                
-                player.hit_timer -= 1
-            else:
-                screen.blit(img, img_rect)
-
-            if not player.alive:
-                death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                death_overlay.fill((100, 0, 0, 180)) # Dark red semi-transparent
-                screen.blit(death_overlay, (0, 0))
-                
-                death_font = pygame.font.SysFont("Chiller", 150)
-                sub_font = pygame.font.SysFont("Chiller", 60)
-                
-                death_surf = death_font.render("YOU DIED", True, (255, 0, 0))
-                death_rect = death_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 - 50))
-                screen.blit(death_surf, death_rect)
-                
-                sub_surf = sub_font.render("Press 'R' to Respawn", True, (255, 255, 255))
-                sub_rect = sub_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 + 80))
-                screen.blit(sub_surf, sub_rect)
+            if player.alive:
+                if player.hit_timer > 0:
+                    tinted_img = img.copy()
+                    tinted_img.fill((40, 0, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
+                    screen.blit(tinted_img, img_rect)
+                    
+                    # Draw red overlay on screen edges
+                    overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                    pygame.draw.rect(overlay, (200, 0, 0, 100), overlay.get_rect(), 20)
+                    pygame.draw.rect(overlay, (200, 0, 0, 50), overlay.get_rect().inflate(-40, -40), 20)
+                    screen.blit(overlay, (0, 0))
+                    
+                    player.hit_timer -= 1
+                else:
+                    screen.blit(img, img_rect)
 
             # Affichage monstres
             for mid, mdata in monsters_data.items():
@@ -413,7 +396,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     screen.blit(m.image, m_blit_rect)
                 
                 # Collision attaque joueur local -> monstre
-                if not paused and player.attacking:
+                if player.alive and not paused and player.attacking:
                     if player.attack_hitbox.colliderect(m.hitbox):
                         if mid not in player.hit_targets and m.hit_timer <= 0:
                             network.hit_monster(mid, player.attack)
@@ -424,6 +407,22 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))
             screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
             screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            
+            if not player.alive:
+                death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                death_overlay.fill((100, 0, 0, 180)) # Dark red semi-transparent
+                screen.blit(death_overlay, (0, 0))
+                
+                death_font = pygame.font.SysFont("Chiller", 150)
+                sub_font = pygame.font.SysFont("Chiller", 60)
+                
+                death_surf = death_font.render("YOU DIED", True, (255, 0, 0))
+                death_rect = death_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 - 50))
+                screen.blit(death_surf, death_rect)
+                
+                sub_surf = sub_font.render("Press 'R' to Respawn", True, (255, 255, 255))
+                sub_rect = sub_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 + 80))
+                screen.blit(sub_surf, sub_rect)
             
             # HUD
             heart_scaled = pygame.transform.scale(heart_image, (SCREEN_W // 25, SCREEN_H // 25))
