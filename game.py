@@ -147,17 +147,29 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     if event.key == pygame.K_ESCAPE:
                         paused = not paused
                     if not paused:
-                        if (event.key == pygame.K_SPACE) and not player.attacking:
-                            player.create_attack_hitbox(width=40, height=90)
-                            player.sword_swing_sfx.play()
-                        if event.key == pygame.K_e:
-                            if player.nb_potions > 0 and player.health < player.max_health:
-                                player.nb_potions -= 1
-                                player.health = min(player.max_health, player.health + 2)
-                                try:
-                                    player.drink_potion_sfx.play()
-                                except Exception:
-                                    pass
+                        if player.alive:
+                            if (event.key == pygame.K_SPACE) and not player.attacking:
+                                player.create_attack_hitbox(width=40, height=90)
+                                player.sword_swing_sfx.play()
+                            if event.key == pygame.K_e:
+                                if player.nb_potions > 0 and player.health < player.max_health:
+                                    player.nb_potions -= 1
+                                    player.health = min(player.max_health, player.health + 2)
+                                    try:
+                                        player.drink_potion_sfx.play()
+                                    except Exception:
+                                        pass
+                        else:
+                            if event.key == pygame.K_r:
+                                # Respawn player
+                                player.health = player.max_health
+                                player.alive = True
+                                player.nb_potions = 2 # Reset potions or maybe keep them? Let's leave potions alone or reset.
+                                start_data = network.data.start_data
+                                if start_data:
+                                    player.rect.centerx = start_data[0] * 2000 + 1000
+                                    player.rect.centery = start_data[1] * 2000 + 1000
+                                    player.update_hitbox()
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and paused:
                     pos = event.pos
@@ -198,56 +210,60 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 speedcross = int(player.speed * 0.7071)
                 moved = False
 
-                if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]):
-                    if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
-                        dx -= speedcross
+                if player.alive:
+                    if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]):
+                        if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                            dx -= speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dx += speedcross
+                            dy -= speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dy += speedcross
+                        elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                            dx += speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dx -= speedcross
+                            dy -= speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dy += speedcross
+                        else :
+                            dy -= player.speed
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dy += player.speed
+                    elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+                        if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                            dx -= speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dx += speedcross
+                            dy += speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dy -= speedcross
+                        elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                            dx += speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dx -= speedcross  
+                            dy += speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dy -= speedcross
+                        else :
+                            dy += player.speed
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            dy -= player.speed
+                    elif not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                        dx -= player.speed
                         moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dx += speedcross
-                        dy -= speedcross
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dy += speedcross
+                        dx += player.speed
                     elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-                        dx += speedcross
+                        dx += player.speed
                         moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dx -= speedcross
-                        dy -= speedcross
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dy += speedcross
-                    else :
-                        dy -= player.speed
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dy += player.speed
-                elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]):
-                    if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
-                        dx -= speedcross
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dx += speedcross
-                        dy += speedcross
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dy -= speedcross
-                    elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-                        dx += speedcross
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dx -= speedcross  
-                        dy += speedcross
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dy -= speedcross
-                    else :
-                        dy += player.speed
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                        dy -= player.speed
-                elif not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
-                    dx -= player.speed
-                    moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                    dx += player.speed
-                elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-                    dx += player.speed
-                    moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
-                    dx -= player.speed
+                        dx -= player.speed
 
+                    running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+                    player.set_running(running)
+                else:
+                    running = False
+                    player.set_running(False)
 
-                running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
-                player.set_running(running)
                 player.update_animation(delta_ms, moved)
 
                 if moved and not player.attacking:
@@ -336,14 +352,31 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 
                 # Draw red overlay on screen edges
                 overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                pygame.draw.rect(overlay, (255, 0, 0, 150), overlay.get_rect(), 20)
-                pygame.draw.rect(overlay, (255, 0, 0, 100), overlay.get_rect().inflate(-40, -40), 20)
-                pygame.draw.rect(overlay, (255, 0, 0, 50), overlay.get_rect().inflate(-80, -80), 20)
+                pygame.draw.rect(overlay, (255, 0, 0, 200), overlay.get_rect(), 40)
+                pygame.draw.rect(overlay, (255, 0, 0, 150), overlay.get_rect().inflate(-80, -80), 40)
+                pygame.draw.rect(overlay, (255, 0, 0, 100), overlay.get_rect().inflate(-160, -160), 40)
+                pygame.draw.rect(overlay, (255, 0, 0, 50), overlay.get_rect().inflate(-240, -240), 40)
                 screen.blit(overlay, (0, 0))
                 
                 player.hit_timer -= 1
             else:
                 screen.blit(img, img_rect)
+
+            if not player.alive:
+                death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                death_overlay.fill((100, 0, 0, 180)) # Dark red semi-transparent
+                screen.blit(death_overlay, (0, 0))
+                
+                death_font = pygame.font.SysFont("Chiller", 150)
+                sub_font = pygame.font.SysFont("Chiller", 60)
+                
+                death_surf = death_font.render("YOU DIED", True, (255, 0, 0))
+                death_rect = death_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 - 50))
+                screen.blit(death_surf, death_rect)
+                
+                sub_surf = sub_font.render("Press 'R' to Respawn", True, (255, 255, 255))
+                sub_rect = sub_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 + 80))
+                screen.blit(sub_surf, sub_rect)
 
             # Affichage monstres
             for mid, mdata in monsters_data.items():

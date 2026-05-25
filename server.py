@@ -274,6 +274,9 @@ class ServerNetwork:
                 target_pid = None
                 min_dist = float('inf')
                 for pid, pstate in self.player_states.items():
+                    if pstate.get("health", 1) <= 0:
+                        continue
+                    
                     p_grid_x = int(pstate["pos"][0] // 2000)
                     p_grid_y = int(pstate["pos"][1] // 2000)
                     
