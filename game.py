@@ -150,6 +150,14 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                         if (event.key == pygame.K_SPACE) and not player.attacking:
                             player.create_attack_hitbox(width=40, height=90)
                             player.sword_swing_sfx.play()
+                        if event.key == pygame.K_e:
+                            if player.nb_potions > 0 and player.health < player.max_health:
+                                player.nb_potions -= 1
+                                player.health = min(player.max_health, player.health + 2)
+                                try:
+                                    player.drink_potion_sfx.play()
+                                except Exception:
+                                    pass
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and paused:
                     pos = event.pos
@@ -325,6 +333,14 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 tinted_img = img.copy()
                 tinted_img.fill((40, 0, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
                 screen.blit(tinted_img, img_rect)
+                
+                # Draw red overlay on screen edges
+                overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                pygame.draw.rect(overlay, (255, 0, 0, 150), overlay.get_rect(), 20)
+                pygame.draw.rect(overlay, (255, 0, 0, 100), overlay.get_rect().inflate(-40, -40), 20)
+                pygame.draw.rect(overlay, (255, 0, 0, 50), overlay.get_rect().inflate(-80, -80), 20)
+                screen.blit(overlay, (0, 0))
+                
                 player.hit_timer -= 1
             else:
                 screen.blit(img, img_rect)

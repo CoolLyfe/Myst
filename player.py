@@ -101,6 +101,9 @@ class Player(Entity):
         self.sword_swing_sfx = pygame.mixer.Sound("assets/sound/sword_swing.mp3") 
         self.sword_swing_sfx.set_volume(0.3)
 
+        self.drink_potion_sfx = pygame.mixer.Sound("assets/sound/drink_potion.mp3")
+        self.drink_potion_sfx.set_volume(0.5)
+
         self.footstep_sfx = pygame.mixer.Sound("assets/sound/running_player.mp3")
         self.footstep_sfx.set_volume(1)
         self.footstep_channel = None

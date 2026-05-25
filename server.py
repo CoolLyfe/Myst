@@ -198,7 +198,7 @@ class ServerNetwork:
                     dy = mpos[1] - ppos[1]
                     dist = (dx**2 + dy**2)**0.5
                     if dist > 0:
-                        kb_strength = 30
+                        kb_strength = 15
                         self.monster_states[mid]["kb_vx"] = (dx/dist) * kb_strength
                         self.monster_states[mid]["kb_vy"] = (dy/dist) * kb_strength
                 
