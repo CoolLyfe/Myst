@@ -16,6 +16,7 @@ class ServerNetwork:
         self.monster_states = {} # monster_id -> state
         self.next_player_id = 1
         self.running = False
+        self.restarting = False
         
         print("[SERVER] Generating global map...")
         self.map_data, self.start_data = procedural_gen()
@@ -386,6 +387,7 @@ class ServerNetwork:
         broadcast_sock.close()
 
     async def broadcast_restart(self):
+        self.restarting = True
         print("[SERVER] Broadcasting restart to clients...")
         msg = {"type": "restart"}
         for addr in self.clients:
@@ -393,6 +395,11 @@ class ServerNetwork:
         await asyncio.sleep(0.1)
 
     async def stop(self):
+        if self.restarting:
+            print("[SERVER] Stopping server for restart (skipping shutdown broadcast)...")
+            self.running = False
+            return
+            
         print("[SERVER] Shutting down...")
         shutdown_msg = {"type": "shutdown"}
         for addr in self.clients:

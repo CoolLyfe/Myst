@@ -174,12 +174,3 @@ if __name__ == "__main__":
     # Test script
     client = ClientNetwork()
     run_client_network(client)
-
-
-def run_client_network(network):
-    asyncio.run(network.start())
-
-if __name__ == "__main__":
-    # Test script
-    client = ClientNetwork()
-    run_client_network(client)
