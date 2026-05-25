@@ -128,6 +128,11 @@ class ClientNetwork:
         elif mtype == "hit_player":
             with self.data.lock:
                 self.data.pending_hits.append(msg)
+        elif mtype == "restart":
+            print("[CLIENT] Server is restarting for a new run...")
+            with self.data.lock:
+                self.data.server_restarting = True
+            self.running = False
         elif mtype == "shutdown":
             print("[CLIENT] Server is shutting down. Disconnecting...")
             self.running = False

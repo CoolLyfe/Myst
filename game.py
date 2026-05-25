@@ -467,14 +467,12 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 is_wipe = not alive_pids
                 
                 if is_host and is_wipe:
-                    # Grey vignette instead of red fill
+                    # Full dark grey overlay
                     overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                    pygame.draw.rect(overlay, (100, 100, 100, 150), overlay.get_rect(), 40)
-                    pygame.draw.rect(overlay, (100, 100, 100, 100), overlay.get_rect().inflate(-80, -80), 40)
-                    pygame.draw.rect(overlay, (100, 100, 100, 50), overlay.get_rect().inflate(-160, -160), 40)
+                    overlay.fill((40, 40, 40, 200)) # Dark grey semi-transparent
                     screen.blit(overlay, (0, 0))
                     msg = "GAME OVER"
-                    text_color = (200, 200, 200)
+                    text_color = (220, 220, 220)
                 else:
                     # Red fill
                     death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
