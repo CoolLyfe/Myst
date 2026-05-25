@@ -265,15 +265,24 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             for hit in hits:
                 if player.hit_timer <= 0:
                     player.take_damage(hit.get("damage", 1))
-                    # Basic knockback
                     mx = hit.get("monster_x", player.rect.centerx)
                     my = hit.get("monster_y", player.rect.centery)
                     dx = player.rect.centerx - mx
                     dy = player.rect.centery - my
                     dist = (dx**2 + dy**2)**0.5
                     if dist > 0:
-                        kb_strength = 60
-                        player.move((dx/dist)*kb_strength, (dy/dist)*kb_strength, lamap.get_width(), lamap.get_height(), lamap)
+                        player.kb_vx = (dx/dist) * 20
+                        player.kb_vy = (dy/dist) * 20
+
+            # Apply smooth knockback locally
+            if getattr(player, 'kb_vx', 0) != 0 or getattr(player, 'kb_vy', 0) != 0:
+                old_dir = player.direction
+                player.move(player.kb_vx, player.kb_vy, lamap.get_width(), lamap.get_height(), lamap)
+                player.direction = old_dir
+                player.kb_vx *= 0.8
+                player.kb_vy *= 0.8
+                if abs(player.kb_vx) < 1: player.kb_vx = 0
+                if abs(player.kb_vy) < 1: player.kb_vy = 0
 
             # Rendu
             screensize = pygame.display.get_window_size()
@@ -356,10 +365,11 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 
                 # Collision attaque joueur local -> monstre
                 if not paused and player.attacking:
-                    if player.check_attack_collision(m):
+                    if player.attack_hitbox.colliderect(m.hitbox):
                         if mid not in player.hit_targets and m.hit_timer <= 0:
                             network.hit_monster(mid, player.attack)
                             player.hit_targets.add(mid)
+                            m.take_damage(player.attack)
 
             # Affichage brouillard
             fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))

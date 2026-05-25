@@ -198,12 +198,9 @@ class ServerNetwork:
                     dy = mpos[1] - ppos[1]
                     dist = (dx**2 + dy**2)**0.5
                     if dist > 0:
-                        kb_strength = 50
-                        new_x = self.monster_states[mid]["pos"][0] + (dx/dist) * kb_strength
-                        new_y = self.monster_states[mid]["pos"][1] + (dy/dist) * kb_strength
-                        if self.is_walkable(new_x, new_y):
-                            self.monster_states[mid]["pos"][0] = new_x
-                            self.monster_states[mid]["pos"][1] = new_y
+                        kb_strength = 30
+                        self.monster_states[mid]["kb_vx"] = (dx/dist) * kb_strength
+                        self.monster_states[mid]["kb_vy"] = (dy/dist) * kb_strength
                 
                 print(f"[SERVER] Monster {mid} took {dmg} damage, health: {self.monster_states[mid]['health']}")
                 if self.monster_states[mid]["health"] <= 0:
@@ -246,6 +243,24 @@ class ServerNetwork:
             for mid, mstate in self.monster_states.items():
                 if not mstate["alive"]: continue
                 
+                # Apply smooth knockback if any
+                kb_vx = mstate.get("kb_vx", 0)
+                kb_vy = mstate.get("kb_vy", 0)
+                is_knocked_back = abs(kb_vx) > 1 or abs(kb_vy) > 1
+                
+                if is_knocked_back:
+                    new_x = mstate["pos"][0] + kb_vx
+                    new_y = mstate["pos"][1] + kb_vy
+                    if self.is_walkable(new_x, new_y):
+                        mstate["pos"][0] = new_x
+                        mstate["pos"][1] = new_y
+                    else:
+                        if self.is_walkable(new_x, mstate["pos"][1]): mstate["pos"][0] = new_x
+                        if self.is_walkable(mstate["pos"][0], new_y): mstate["pos"][1] = new_y
+                    
+                    mstate["kb_vx"] = kb_vx * 0.8
+                    mstate["kb_vy"] = kb_vy * 0.8
+                
                 # Decrement attack cooldown
                 if mstate.get("attack_cooldown", 0) > 0:
                     mstate["attack_cooldown"] -= 1
@@ -271,7 +286,7 @@ class ServerNetwork:
                         min_dist = dist_sq
                         target_pid = pid
                 
-                if target_pid:
+                if target_pid and not is_knocked_back: # Skip AI move if knocked back hard
                     tpos = self.player_states[target_pid]["pos"]
                     dx = tpos[0] - mstate["pos"][0]
                     dy = tpos[1] - mstate["pos"][1]

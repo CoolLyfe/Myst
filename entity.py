@@ -44,6 +44,8 @@ class Entity(pygame.sprite.Sprite):
         self.direction = "down"
         self.alive = True
         self.hit_timer = 0
+        self.kb_vx = 0
+        self.kb_vy = 0
         # Setup de la hitbox d'attaque + direction de l'entite
 
     def update_hitbox(self):
