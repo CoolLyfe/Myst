@@ -300,8 +300,15 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 if not mdata["alive"]: continue
                 if mid not in synced_monsters:
                     synced_monsters[mid] = BasicMonster(mdata["pos"][0], mdata["pos"][1], 150)
+                    synced_monsters[mid].health = mdata.get("health", 80)
                 
                 m = synced_monsters[mid]
+                
+                # Update hit timer and health from server
+                if m.health > mdata.get("health", 0):
+                    m.hit_timer = 10
+                m.health = mdata.get("health", 0)
+                
                 m.rect.center = mdata["pos"]
                 m.update_hitbox()
                 
@@ -311,12 +318,23 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 m_screen_x = m.rect.centerx - cam_x
                 m_screen_y = m.rect.centery - cam_y
                 m_blit_rect = m.image.get_rect(center=(m_screen_x, m_screen_y))
-                screen.blit(m.image, m_blit_rect)
+                
+                if m.hit_timer > 0:
+                    # Create a red-tinted version of the image
+                    tinted_img = m.image.copy()
+                    # Using a lower red value for a more subtle glow
+                    tinted_img.fill((40, 0, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
+                    screen.blit(tinted_img, m_blit_rect)
+                    m.hit_timer -= 1
+                else:
+                    screen.blit(m.image, m_blit_rect)
                 
                 # Collision attaque joueur local -> monstre
                 if not paused and player.attacking:
                     if player.check_attack_collision(m):
-                        network.hit_monster(mid, player.attack)
+                        if mid not in player.hit_targets:
+                            network.hit_monster(mid, player.attack)
+                            player.hit_targets.add(mid)
 
             # Affichage brouillard
             fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))

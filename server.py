@@ -35,6 +35,51 @@ class ServerNetwork:
             "type": "basic"
         }
 
+    def is_walkable(self, x, y):
+        # Determine which cell we are in
+        grid_x = int(x // 2000)
+        grid_y = int(y // 2000)
+        
+        if not (0 <= grid_x < 8 and 0 <= grid_y < 5):
+            return False
+        
+        room = self.map_data[grid_y][grid_x]
+        if room[0] == 0:
+            return False
+            
+        # Check if inside room (with gap)
+        cell_size = 2000
+        gap = 400
+        room_left = grid_x * cell_size + gap // 2
+        room_right = (grid_x + 1) * cell_size - gap // 2
+        room_top = grid_y * cell_size + gap // 2
+        room_bottom = (grid_y + 1) * cell_size - gap // 2
+        
+        if room_left <= x <= room_right and room_top <= y <= room_bottom:
+            return True
+            
+        # Check if inside corridors
+        thickness = cell_size // 12
+        half_thick = thickness // 2
+        center_x = grid_x * cell_size + cell_size // 2
+        center_y = grid_y * cell_size + cell_size // 2
+        
+        for conn in room[1]:
+            if conn == "N" and y < center_y:
+                if center_x - half_thick <= x <= center_x + half_thick:
+                    return True
+            elif conn == "S" and y > center_y:
+                if center_x - half_thick <= x <= center_x + half_thick:
+                    return True
+            elif conn == "E" and x > center_x:
+                if center_y - half_thick <= y <= center_y + half_thick:
+                    return True
+            elif conn == "O" and x < center_x:
+                if center_y - half_thick <= y <= center_y + half_thick:
+                    return True
+                    
+        return False
+
     async def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.host, self.port))
@@ -118,6 +163,23 @@ class ServerNetwork:
             dmg = msg.get("damage", 10)
             if mid in self.monster_states:
                 self.monster_states[mid]["health"] -= dmg
+                
+                # Apply knockback
+                pid = self.clients.get(addr)
+                if pid and pid in self.player_states:
+                    ppos = self.player_states[pid]["pos"]
+                    mpos = self.monster_states[mid]["pos"]
+                    dx = mpos[0] - ppos[0]
+                    dy = mpos[1] - ppos[1]
+                    dist = (dx**2 + dy**2)**0.5
+                    if dist > 0:
+                        kb_strength = 50
+                        new_x = self.monster_states[mid]["pos"][0] + (dx/dist) * kb_strength
+                        new_y = self.monster_states[mid]["pos"][1] + (dy/dist) * kb_strength
+                        if self.is_walkable(new_x, new_y):
+                            self.monster_states[mid]["pos"][0] = new_x
+                            self.monster_states[mid]["pos"][1] = new_y
+                
                 print(f"[SERVER] Monster {mid} took {dmg} damage, health: {self.monster_states[mid]['health']}")
                 if self.monster_states[mid]["health"] <= 0:
                     self.monster_states[mid]["alive"] = False
@@ -179,8 +241,24 @@ class ServerNetwork:
                     
                     if 50 < dist < 1000: # Only move if player is somewhat close but not on top
                         speed = 3
-                        mstate["pos"][0] += (dx/dist) * speed
-                        mstate["pos"][1] += (dy/dist) * speed
+                        vx = (dx/dist) * speed
+                        vy = (dy/dist) * speed
+                        
+                        # Try moving in both axes
+                        new_x = mstate["pos"][0] + vx
+                        new_y = mstate["pos"][1] + vy
+                        
+                        if self.is_walkable(new_x, new_y):
+                            mstate["pos"][0] = new_x
+                            mstate["pos"][1] = new_y
+                        else:
+                            # Try sliding along X
+                            if self.is_walkable(new_x, mstate["pos"][1]):
+                                mstate["pos"][0] = new_x
+                            # Try sliding along Y
+                            elif self.is_walkable(mstate["pos"][0], new_y):
+                                mstate["pos"][1] = new_y
+
                         # Update direction for animation
                         if abs(dx) > abs(dy):
                             mstate["dir"] = "right" if dx > 0 else "left"

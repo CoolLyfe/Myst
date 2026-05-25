@@ -39,9 +39,11 @@ class Entity(pygame.sprite.Sprite):
         # Setup de la hitbox de l'entite
 
         self.attack_hitbox = pygame.Rect(0, 0, 0, 0)
+        self.hit_targets = set()
         self.attacking = False
         self.direction = "down"
         self.alive = True
+        self.hit_timer = 0
         # Setup de la hitbox d'attaque + direction de l'entite
 
     def update_hitbox(self):
@@ -71,6 +73,7 @@ class Entity(pygame.sprite.Sprite):
 
     def take_damage(self, damage):
         self.health -= damage
+        self.hit_timer = 10  # Duration of the red tint effect in frames
         if self.health <= 0:
             self.health = 0
             self.alive = False
@@ -119,6 +122,7 @@ class Entity(pygame.sprite.Sprite):
     def reset_attack(self):
         self.attacking = False
         self.attack_hitbox = pygame.Rect(0, 0, 0, 0)
+        self.hit_targets.clear()
         # Reset la hitbox d'attaque apres utilisation
 
     def draw_hitbox(self, screen, cam_x=0, cam_y=0):
