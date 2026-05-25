@@ -133,15 +133,18 @@ class ServerNetwork:
                 await asyncio.sleep(0.01)
 
     async def handle_message(self, data, addr):
+        # Debug: track all incoming traffic
+        # print(f"[SERVER] Data from {addr}: {data[:50]}...") 
         try:
             msg = json.loads(data.decode())
         except Exception as e:
-            # print(f"[SERVER] Decode Error: {e}")
+            # print(f"[SERVER] Decode Error from {addr}: {e}")
             return
 
         msg_type = msg.get("type")
 
         if msg_type == "join":
+            print(f"[SERVER] Join request received from {addr}")
             if addr not in self.clients:
                 if len(self.clients) >= self.max_clients:
                     # Ignore join request if full

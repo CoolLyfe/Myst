@@ -25,13 +25,20 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             print(f"[GAME] Host server started for room: {room_name}")
         time.sleep(1)
     elif room_name:
-        # Client discovery
-        discovered_ip, discovered_port = ClientNetwork.discover_room(room_name)
-        if discovered_ip:
-            server_ip = discovered_ip
+        # Check if room_name is an IP address
+        import re
+        ip_pattern = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+        if ip_pattern.match(room_name):
+            print(f"[GAME] Direct IP detected: {room_name}. Skipping discovery.")
+            server_ip = room_name
         else:
-            print(f"[GAME] Could not find room: {room_name}")
-            return False
+            # Client discovery
+            discovered_ip, discovered_port = ClientNetwork.discover_room(room_name)
+            if discovered_ip:
+                server_ip = discovered_ip
+            else:
+                print(f"[GAME] Could not find room: {room_name}")
+                return False
 
     network = ClientNetwork(server_ip=server_ip)
     threading.Thread(target=run_client_network, args=(network,), daemon=True).start()
@@ -230,7 +237,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 monsters_data = net_state["monsters"]
 
                 alive_pids = sorted([pid for pid, pdata in remote_data.items() if pdata.get("health", 1) > 0])
-                
+
                 # Dynamic death buttons selection
                 if is_solo:
                     death_buttons = death_btns_solo
@@ -242,7 +249,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 # Host specific spectate logic: force back to death menu if everyone is dead
                 if is_host and getattr(player, 'spectating', False) and not alive_pids:
                     player.spectating = False
-                
+
                 is_free_cam = getattr(player, 'spectating', False) and not alive_pids
 
                 # Contrôles joueur local
@@ -352,7 +359,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             # Rendu
             screensize = pygame.display.get_window_size()
             SCREEN_W, SCREEN_H = screensize[0], screensize[1]
-            
+
             if getattr(player, 'spectating', False) and alive_pids:
                 spectate_pid = alive_pids[spectate_index % len(alive_pids)]
                 if spectate_pid in remote_players:
@@ -361,7 +368,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     cx, cy = remote_data[spectate_pid]["pos"]
             else:
                 cx, cy = player.rect.centerx, player.rect.centery
-            
+
             cam_x, cam_y = get_camera_offset(cx, cy)
 
             background_scaled = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
