@@ -25,20 +25,13 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             print(f"[GAME] Host server started for room: {room_name}")
         time.sleep(1)
     elif room_name:
-        # Check if room_name is an IP address
-        import re
-        ip_pattern = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-        if ip_pattern.match(room_name):
-            print(f"[GAME] Direct IP detected: {room_name}. Skipping discovery.")
-            server_ip = room_name
+        # Client discovery
+        discovered_ip, discovered_port = ClientNetwork.discover_room(room_name)
+        if discovered_ip:
+            server_ip = discovered_ip
         else:
-            # Client discovery
-            discovered_ip, discovered_port = ClientNetwork.discover_room(room_name)
-            if discovered_ip:
-                server_ip = discovered_ip
-            else:
-                print(f"[GAME] Could not find room: {room_name}")
-                return False
+            print(f"[GAME] Could not find room: {room_name}")
+            return False
 
     network = ClientNetwork(server_ip=server_ip)
     threading.Thread(target=run_client_network, args=(network,), daemon=True).start()

@@ -144,7 +144,6 @@ class ServerNetwork:
         msg_type = msg.get("type")
 
         if msg_type == "join":
-            print(f"[SERVER] Join request received from {addr}")
             if addr not in self.clients:
                 if len(self.clients) >= self.max_clients:
                     # Ignore join request if full
