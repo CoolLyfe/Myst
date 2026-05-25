@@ -25,15 +25,40 @@ class ServerNetwork:
         self.init_monsters()
 
     def init_monsters(self):
-        # Place one monster in the spawn room for testing
-        spawn_x = self.start_data[0] * 2000 + 1500
-        spawn_y = self.start_data[1] * 2000 + 1000
-        self.monster_states["1"] = {
-            "pos": [spawn_x, spawn_y],
-            "health": 80,
-            "alive": True,
-            "type": "basic"
-        }
+        import random
+        monster_id_counter = 1
+        
+        # Loop through the map grid
+        for grid_y in range(len(self.map_data)):
+            for grid_x in range(len(self.map_data[grid_y])):
+                room = self.map_data[grid_y][grid_x]
+                room_type = room[0]
+                
+                # Spawn in classic (3) and fight (5) rooms, and maybe boss (2)
+                if room_type in [3, 5]:
+                    # Random number of monsters based on room type
+                    nb_monsters = random.randint(2, 4) if room_type == 3 else random.randint(3, 6)
+                    
+                    for _ in range(nb_monsters):
+                        # Random position inside the room (considering gap)
+                        cell_size = 2000
+                        gap = 400
+                        room_left = grid_x * cell_size + gap // 2 + 100
+                        room_right = (grid_x + 1) * cell_size - gap // 2 - 100
+                        room_top = grid_y * cell_size + gap // 2 + 100
+                        room_bottom = (grid_y + 1) * cell_size - gap // 2 - 100
+                        
+                        spawn_x = random.uniform(room_left, room_right)
+                        spawn_y = random.uniform(room_top, room_bottom)
+                        
+                        self.monster_states[str(monster_id_counter)] = {
+                            "pos": [spawn_x, spawn_y],
+                            "health": 80,
+                            "alive": True,
+                            "type": "basic",
+                            "attack_cooldown": 0
+                        }
+                        monster_id_counter += 1
 
     def is_walkable(self, x, y):
         # Determine which cell we are in
@@ -218,16 +243,29 @@ class ServerNetwork:
 
     async def monster_ai_loop(self):
         while self.running:
-            # Very simple AI for now: move towards nearest player
             for mid, mstate in self.monster_states.items():
                 if not mstate["alive"]: continue
                 
+                # Decrement attack cooldown
+                if mstate.get("attack_cooldown", 0) > 0:
+                    mstate["attack_cooldown"] -= 1
+                
                 if not self.player_states: continue
                 
-                # Find nearest player
+                m_grid_x = int(mstate["pos"][0] // 2000)
+                m_grid_y = int(mstate["pos"][1] // 2000)
+                
+                # Find nearest player in the same room
                 target_pid = None
                 min_dist = float('inf')
                 for pid, pstate in self.player_states.items():
+                    p_grid_x = int(pstate["pos"][0] // 2000)
+                    p_grid_y = int(pstate["pos"][1] // 2000)
+                    
+                    # Only aggro players in the exact same room cell
+                    if m_grid_x != p_grid_x or m_grid_y != p_grid_y:
+                        continue
+                        
                     dist_sq = (pstate["pos"][0] - mstate["pos"][0])**2 + (pstate["pos"][1] - mstate["pos"][1])**2
                     if dist_sq < min_dist:
                         min_dist = dist_sq
@@ -239,7 +277,15 @@ class ServerNetwork:
                     dy = tpos[1] - mstate["pos"][1]
                     dist = (dx**2 + dy**2)**0.5
                     
-                    if 50 < dist < 1000: # Only move if player is somewhat close but not on top
+                    if dist < 80: # Attack range
+                        if mstate.get("attack_cooldown", 0) <= 0:
+                            mstate["attack_cooldown"] = 40 # 2 seconds cooldown at 20fps
+                            # Find the target player's address to send the hit message
+                            for addr, pid in self.clients.items():
+                                if pid == target_pid:
+                                    await self.send_to({"type": "hit_player", "damage": 1, "monster_x": mstate["pos"][0], "monster_y": mstate["pos"][1]}, addr)
+                                    break
+                    elif 80 <= dist < 1000: # Only move if player is somewhat close but not on top
                         speed = 3
                         vx = (dx/dist) * speed
                         vy = (dy/dist) * speed

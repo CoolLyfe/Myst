@@ -257,6 +257,24 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 remote_data = net_state["players"]
                 monsters_data = net_state["monsters"]
 
+            # Process pending hits from the server
+            with network.data.lock:
+                hits = list(network.data.pending_hits)
+                network.data.pending_hits.clear()
+            
+            for hit in hits:
+                if player.hit_timer <= 0:
+                    player.take_damage(hit.get("damage", 1))
+                    # Basic knockback
+                    mx = hit.get("monster_x", player.rect.centerx)
+                    my = hit.get("monster_y", player.rect.centery)
+                    dx = player.rect.centerx - mx
+                    dy = player.rect.centery - my
+                    dist = (dx**2 + dy**2)**0.5
+                    if dist > 0:
+                        kb_strength = 60
+                        player.move((dx/dist)*kb_strength, (dy/dist)*kb_strength, lamap.get_width(), lamap.get_height(), lamap)
+
             # Rendu
             screensize = pygame.display.get_window_size()
             SCREEN_W, SCREEN_H = screensize[0], screensize[1]
@@ -290,10 +308,17 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 scale = 1.25
                 img = pygame.transform.scale(player.image, (int(player.image.get_width()*scale), int(player.image.get_height()*scale)))
                 img_rect = img.get_rect(center=(player_screen_x, player_screen_y))
-                screen.blit(img, img_rect)
             else:
-                player_blit_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
-                screen.blit(player.image, player_blit_rect)
+                img = player.image.copy()
+                img_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
+            
+            if player.hit_timer > 0:
+                tinted_img = img.copy()
+                tinted_img.fill((40, 0, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
+                screen.blit(tinted_img, img_rect)
+                player.hit_timer -= 1
+            else:
+                screen.blit(img, img_rect)
 
             # Affichage monstres
             for mid, mdata in monsters_data.items():
@@ -332,7 +357,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 # Collision attaque joueur local -> monstre
                 if not paused and player.attacking:
                     if player.check_attack_collision(m):
-                        if mid not in player.hit_targets:
+                        if mid not in player.hit_targets and m.hit_timer <= 0:
                             network.hit_monster(mid, player.attack)
                             player.hit_targets.add(mid)
 

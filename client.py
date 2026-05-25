@@ -12,6 +12,7 @@ class ClientData:
         self.start_data = None
         self.players = {} # Other players: { "id": { "pos": [x,y], "dir": "down", ... } }
         self.monsters = {} # Monsters: { "id": { "pos": [x,y], "alive": True, ... } }
+        self.pending_hits = [] # List of hits on the local player
         self.local_player_state = {
             "pos": [0, 0],
             "dir": "down",
@@ -123,6 +124,9 @@ class ClientNetwork:
                 my_id = self.data.player_id
                 self.data.players = {k: v for k, v in all_players.items() if k != my_id}
                 self.data.monsters = msg.get("monsters", {})
+        elif mtype == "hit_player":
+            with self.data.lock:
+                self.data.pending_hits.append(msg)
         elif mtype == "shutdown":
             print("[CLIENT] Server is shutting down. Disconnecting...")
             self.running = False
