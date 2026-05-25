@@ -354,9 +354,9 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     # Draw red overlay on screen edges
                     overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
                     # Three layers of 8px to create a smoother, slimmer fade (24px total)
-                    pygame.draw.rect(overlay, (255, 0, 0, 140), overlay.get_rect(), 8)
-                    pygame.draw.rect(overlay, (255, 0, 0, 80), overlay.get_rect().inflate(-16, -16), 8)
-                    pygame.draw.rect(overlay, (255, 0, 0, 30), overlay.get_rect().inflate(-32, -32), 8)
+                    pygame.draw.rect(overlay, (255, 0, 0, 210), overlay.get_rect(), 10)
+                    pygame.draw.rect(overlay, (255, 0, 0, 140), overlay.get_rect().inflate(-20, -20), 10)
+                    pygame.draw.rect(overlay, (255, 0, 0, 70), overlay.get_rect().inflate(-40, -40), 10)
                     screen.blit(overlay, (0, 0))
 
                     player.hit_timer -= 1
