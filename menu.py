@@ -129,6 +129,7 @@ def main():
                             if btn["label"] == "Solo":
                                 res = game.game(is_host=True, is_solo=True)
                                 while res == "retry":
+                                    time.sleep(0.5) # Wait for previous server to clean up
                                     res = game.game(is_host=True, is_solo=True)
                                 pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
                             elif btn["label"] == "En ligne":
@@ -170,6 +171,7 @@ def main():
                         if menu_state == "host_setup":
                             res = game.game(is_host=True, is_solo=False, room_name=input_text)
                             while res == "retry":
+                                time.sleep(0.5)
                                 res = game.game(is_host=True, is_solo=False, room_name=input_text)
                         else:
                             # Show "Searching..." feedback?
@@ -178,8 +180,14 @@ def main():
                             draw_menu() # Force update
                             
                             res = game.game(is_host=False, room_name=input_text)
-                            while res == "retry":
+                            # For clients, keep trying to discover the room if it's a retry
+                            retry_count = 0
+                            while res == "retry" or (res is False and retry_count < 10):
+                                time.sleep(1.0)
                                 res = game.game(is_host=False, room_name=input_text)
+                                if res is not False and res != "retry":
+                                    break
+                                retry_count += 1
                                 
                             if res is False:
                                 error_msg = f"Error: Room '{input_text}' not found!"

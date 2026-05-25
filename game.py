@@ -464,14 +464,29 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
             if not player.alive and not getattr(player, 'spectating', False):
-                death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                death_overlay.fill((100, 0, 0, 180)) # Dark red semi-transparent
-                screen.blit(death_overlay, (0, 0))
+                is_wipe = not alive_pids
+                
+                if is_host and is_wipe:
+                    # Grey vignette instead of red fill
+                    overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                    pygame.draw.rect(overlay, (100, 100, 100, 150), overlay.get_rect(), 40)
+                    pygame.draw.rect(overlay, (100, 100, 100, 100), overlay.get_rect().inflate(-80, -80), 40)
+                    pygame.draw.rect(overlay, (100, 100, 100, 50), overlay.get_rect().inflate(-160, -160), 40)
+                    screen.blit(overlay, (0, 0))
+                    msg = "GAME OVER"
+                    text_color = (200, 200, 200)
+                else:
+                    # Red fill
+                    death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                    death_overlay.fill((100, 0, 0, 180)) # Dark red semi-transparent
+                    screen.blit(death_overlay, (0, 0))
+                    msg = "YOU DIED"
+                    text_color = (255, 0, 0)
 
                 death_font = pygame.font.SysFont("Chiller", 150)
                 sub_font = pygame.font.SysFont("Chiller", 60)
 
-                death_surf = death_font.render("YOU DIED", True, (255, 0, 0))
+                death_surf = death_font.render(msg, True, text_color)
                 death_rect = death_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 - 50))
                 screen.blit(death_surf, death_rect)
 
