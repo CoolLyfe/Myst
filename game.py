@@ -195,15 +195,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                         for btn in death_buttons:
                             if btn["rect"].collidepoint(pos):
                                 if btn["label"] == "Try Again":
-                                    # Full reset for rogue-like try again
-                                    player.health = player.max_health
-                                    player.alive = True
-                                    player.nb_potions = 2
-                                    start_data = network.data.start_data
-                                    if start_data:
-                                        player.rect.centerx = start_data[0] * 2000 + 1000
-                                        player.rect.centery = start_data[1] * 2000 + 1000
-                                        player.update_hitbox()
+                                    return "retry"
                                 elif btn["label"] == "Quit to Menu":
                                     return
             if not paused:
@@ -433,10 +425,10 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
                 # Draw Death Menu Buttons
                 for btn in death_buttons:
-                    color = (80, 80, 80) if (click_feedback_btn == btn and current_time < click_feedback_timer) else (30, 30, 30)
+                    color = (200, 200, 200) if (click_feedback_btn == btn and current_time < click_feedback_timer) else (255, 255, 255)
                     pygame.draw.rect(screen, color, btn["rect"])
-                    pygame.draw.rect(screen, (255, 255, 255), btn["rect"], 2)
-                    label_surf = pause_font.render(btn["label"], True, (255, 255, 255))
+                    pygame.draw.rect(screen, (0, 0, 0), btn["rect"], 2)
+                    label_surf = pause_font.render(btn["label"], True, (0, 0, 0))
                     label_rect = label_surf.get_rect(center=btn["rect"].center)
                     screen.blit(label_surf, label_rect)
 
