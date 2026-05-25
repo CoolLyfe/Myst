@@ -222,7 +222,10 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                                         time.sleep(0.2)
                                     return "retry"
                                 elif btn["label"] == "Spectate":
-                                    player.spectating = True
+                                    if is_host and not alive_pids:
+                                        pass # Don't allow host to spectate if alone/everyone dead
+                                    else:
+                                        player.spectating = True
                                 elif btn["label"] == "Quit to Menu":
                                     return
             if not paused:
@@ -233,6 +236,11 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 monsters_data = net_state["monsters"]
 
                 alive_pids = sorted([pid for pid, pdata in remote_data.items() if pdata.get("health", 1) > 0])
+                
+                # Host specific spectate logic: force back to death menu if everyone is dead
+                if is_host and getattr(player, 'spectating', False) and not alive_pids:
+                    player.spectating = False
+                
                 is_free_cam = getattr(player, 'spectating', False) and not alive_pids
 
                 # Contrôles joueur local
