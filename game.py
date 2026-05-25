@@ -123,23 +123,20 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
         {"label": "Resume", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 - 100, 300, 80)},
         {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)}
     ]
-    # Death menu buttons
-    if is_solo:
-        death_buttons = [
-            {"label": "Try Again", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
-            {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)}
-        ]
-    elif is_host:
-        death_buttons = [
-            {"label": "Try Again", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
-            {"label": "Spectate", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)},
-            {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 260, 300, 80)}
-        ]
-    else:
-        death_buttons = [
-            {"label": "Spectate", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
-            {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)}
-        ]
+    # Death menu layouts
+    death_btns_solo = [
+        {"label": "Try Again", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
+        {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)}
+    ]
+    death_btns_host_spec = [
+        {"label": "Try Again", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
+        {"label": "Spectate", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)},
+        {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 260, 300, 80)}
+    ]
+    death_btns_client = [
+        {"label": "Spectate", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
+        {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)}
+    ]
     pause_font = pygame.font.SysFont("Chiller", 60)
 
     click_feedback_btn = None
@@ -222,10 +219,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                                         time.sleep(0.2)
                                     return "retry"
                                 elif btn["label"] == "Spectate":
-                                    if is_host and not alive_pids:
-                                        pass # Don't allow host to spectate if alone/everyone dead
-                                    else:
-                                        player.spectating = True
+                                    player.spectating = True
                                 elif btn["label"] == "Quit to Menu":
                                     return
             if not paused:
@@ -237,6 +231,14 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
                 alive_pids = sorted([pid for pid, pdata in remote_data.items() if pdata.get("health", 1) > 0])
                 
+                # Dynamic death buttons selection
+                if is_solo:
+                    death_buttons = death_btns_solo
+                elif is_host:
+                    death_buttons = death_btns_host_spec if alive_pids else death_btns_solo
+                else:
+                    death_buttons = death_btns_client
+
                 # Host specific spectate logic: force back to death menu if everyone is dead
                 if is_host and getattr(player, 'spectating', False) and not alive_pids:
                     player.spectating = False
