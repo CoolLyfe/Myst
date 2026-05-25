@@ -353,8 +353,8 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     
                     # Draw red overlay on screen edges
                     overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                    pygame.draw.rect(overlay, (200, 0, 0, 150), overlay.get_rect(), 20)
-                    pygame.draw.rect(overlay, (200, 0, 0, 80), overlay.get_rect().inflate(-40, -40), 20)
+                    pygame.draw.rect(overlay, (255, 0, 0, 220), overlay.get_rect(), 20)
+                    pygame.draw.rect(overlay, (255, 0, 0, 120), overlay.get_rect().inflate(-40, -40), 20)
                     screen.blit(overlay, (0, 0))
                     
                     player.hit_timer -= 1
@@ -410,7 +410,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             
             if not player.alive:
                 death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                death_overlay.fill((100, 0, 0, 180)) # Dark red semi-transparent
+                death_overlay.fill((200, 0, 0, 200)) # Intense red semi-transparent
                 screen.blit(death_overlay, (0, 0))
                 
                 death_font = pygame.font.SysFont("Chiller", 150)
