@@ -121,6 +121,11 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
         {"label": "Resume", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 - 100, 300, 80)},
         {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)}
     ]
+    # Death menu buttons
+    death_buttons = [
+        {"label": "Try Again", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 20, 300, 80)},
+        {"label": "Quit to Menu", "rect": pygame.Rect(SCREEN_W // 2 - 150, SCREEN_H // 2 + 140, 300, 80)}
+    ]
     pause_font = pygame.font.SysFont("Chiller", 60)
 
     click_feedback_btn = None
@@ -159,46 +164,50 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                                         player.drink_potion_sfx.play()
                                     except Exception:
                                         pass
-                        else:
-                            if event.key == pygame.K_r:
-                                # Respawn player
-                                player.health = player.max_health
-                                player.alive = True
-                                player.nb_potions = 2 # Reset potions or maybe keep them? Let's leave potions alone or reset.
-                                start_data = network.data.start_data
-                                if start_data:
-                                    player.rect.centerx = start_data[0] * 2000 + 1000
-                                    player.rect.centery = start_data[1] * 2000 + 1000
-                                    player.update_hitbox()
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and paused:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = event.pos
-                    for btn in pause_buttons:
-                        if btn["rect"].collidepoint(pos):
-                            click_feedback_btn = btn
-                            click_feedback_timer = time.time() + 0.1
+                    if paused:
+                        for btn in pause_buttons:
+                            if btn["rect"].collidepoint(pos):
+                                click_feedback_btn = btn
+                                click_feedback_timer = time.time() + 0.1
 
-                            # Force immediate redraw for visual feedback
-                            # (Duplicate rendering logic briefly for feedback)
-                            overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                            overlay.fill((0, 0, 0, 150))
-                            screen.blit(overlay, (0, 0))
-                            for b in pause_buttons:
-                                color = (80, 80, 80) if b == btn else (30, 30, 30)
-                                pygame.draw.rect(screen, color, b["rect"])
-                                pygame.draw.rect(screen, (255, 255, 255), b["rect"], 2)
-                                l_surf = pause_font.render(b["label"], True, (255, 255, 255))
-                                l_rect = l_surf.get_rect(center=b["rect"].center)
-                                screen.blit(l_surf, l_rect)
-                            pygame.display.flip()
-                            time.sleep(0.05)
+                                # Force immediate redraw for visual feedback
+                                overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                                overlay.fill((0, 0, 0, 150))
+                                screen.blit(overlay, (0, 0))
+                                for b in pause_buttons:
+                                    color = (80, 80, 80) if b == btn else (30, 30, 30)
+                                    pygame.draw.rect(screen, color, b["rect"])
+                                    pygame.draw.rect(screen, (255, 255, 255), b["rect"], 2)
+                                    l_surf = pause_font.render(b["label"], True, (255, 255, 255))
+                                    l_rect = l_surf.get_rect(center=b["rect"].center)
+                                    screen.blit(l_surf, l_rect)
+                                pygame.display.flip()
+                                time.sleep(0.05)
 
-                            if btn["label"] == "Resume":
-                                paused = False
-                            elif btn["label"] == "Quit to Menu":
-                                return # This will trigger the 'finally' block
-
+                                if btn["label"] == "Resume":
+                                    paused = False
+                                elif btn["label"] == "Quit to Menu":
+                                    return
+                    elif not player.alive:
+                        for btn in death_buttons:
+                            if btn["rect"].collidepoint(pos):
+                                if btn["label"] == "Try Again":
+                                    # Full reset for rogue-like try again
+                                    player.health = player.max_health
+                                    player.alive = True
+                                    player.nb_potions = 2
+                                    start_data = network.data.start_data
+                                    if start_data:
+                                        player.rect.centerx = start_data[0] * 2000 + 1000
+                                        player.rect.centery = start_data[1] * 2000 + 1000
+                                        player.update_hitbox()
+                                elif btn["label"] == "Quit to Menu":
+                                    return
             if not paused:
+
                 # Récupération état réseau
                 net_state = network.data.get_game_state()
                 remote_data = net_state["players"]
@@ -412,7 +421,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
             if not player.alive:
                 death_overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                death_overlay.fill((100, 0, 0, 180)) # Intense red semi-transparent
+                death_overlay.fill((200, 0, 0, 200)) # Intense red semi-transparent
                 screen.blit(death_overlay, (0, 0))
 
                 death_font = pygame.font.SysFont("Chiller", 150)
@@ -422,9 +431,14 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 death_rect = death_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 - 50))
                 screen.blit(death_surf, death_rect)
 
-                sub_surf = sub_font.render("Press 'R' to Respawn", True, (255, 255, 255))
-                sub_rect = sub_surf.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 + 80))
-                screen.blit(sub_surf, sub_rect)
+                # Draw Death Menu Buttons
+                for btn in death_buttons:
+                    color = (80, 80, 80) if (click_feedback_btn == btn and current_time < click_feedback_timer) else (30, 30, 30)
+                    pygame.draw.rect(screen, color, btn["rect"])
+                    pygame.draw.rect(screen, (255, 255, 255), btn["rect"], 2)
+                    label_surf = pause_font.render(btn["label"], True, (255, 255, 255))
+                    label_rect = label_surf.get_rect(center=btn["rect"].center)
+                    screen.blit(label_surf, label_rect)
 
             # HUD
             heart_scaled = pygame.transform.scale(heart_image, (SCREEN_W // 25, SCREEN_H // 25))
