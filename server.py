@@ -59,7 +59,7 @@ class ServerNetwork:
                         if mtype == "shadow":
                             hp, speed, det_range, atk_range, cd_max = 150, 3, 450, 100, 30
 
-                        elif mtype == "fast":
+                        elif mtype == "light":
                             hp, speed, det_range, atk_range, cd_max = 80, 5, 700, 120, 10
 
                         elif mtype == "tank":
