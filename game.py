@@ -8,6 +8,7 @@ from player import Player
 from monster import BasicMonster, ShadowMonster, LightMonster, TankMonster
 from server import ServerNetwork
 from client import ClientNetwork, run_client_network
+from boss import Boss
 
 
 def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
@@ -178,6 +179,9 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                                         player.drink_potion_sfx.play()
                                     except Exception:
                                         pass
+                            if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
+                                if player.alive:
+                                    player.start_dash()
                         elif getattr(player, 'spectating', False):
                             if event.key == pygame.K_RIGHT:
                                 spectate_index += 1
@@ -228,6 +232,9 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 net_state = network.data.get_game_state()
                 remote_data = net_state["players"]
                 monsters_data = net_state["monsters"]
+                projectiles_data = net_state.get("projectiles", [])
+                boss_active = net_state.get("boss_active", False)
+                boss_room = net_state.get("boss_room", None)
 
                 alive_pids = sorted([pid for pid, pdata in remote_data.items() if pdata.get("health", 1) > 0])
 
@@ -251,7 +258,15 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 speedcross = int(player.speed * 0.7071)
                 moved = False
 
-                if player.alive or is_free_cam:
+                if player.dashing:
+                    # Le mouvement du dash ignore les autres inputs
+                    dash_displacement = player.speed * player.dash_speed_multiplier
+                    dx_dash = player.dash_direction_vector.x * dash_displacement
+                    dy_dash = player.dash_direction_vector.y * dash_displacement
+                    moved = player.move(dx_dash, dy_dash, MAP_W, MAP_H, lamap)
+                    player.stop_footsteps()
+                
+                if (player.alive or is_free_cam) and not player.dashing:
                     if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]):
                         if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
                             dx -= speedcross
@@ -305,7 +320,25 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     running = False
                     player.set_running(False)
 
-                player.update_animation(delta_ms, moved)
+                if moved and boss_active and boss_room and player.alive:
+                    bgx, bgy = boss_room
+                    p_gx = int(player.rect.centerx // 2000)
+                    p_gy = int(player.rect.centery // 2000)
+                    if p_gx == bgx and p_gy == bgy:
+                        cell_size = 2000
+                        gap = 400
+                        room_left = bgx * cell_size + gap // 2 + player.size//2
+                        room_right = (bgx + 1) * cell_size - gap // 2 - player.size//2
+                        room_top = bgy * cell_size + gap // 2 + player.size//2
+                        room_bottom = (bgy + 1) * cell_size - gap // 2 - player.size//2
+                        
+                        cx = max(room_left, min(player.rect.centerx, room_right))
+                        cy = max(room_top, min(player.rect.centery, room_bottom))
+                        player.rect.centerx = cx
+                        player.rect.centery = cy
+                        player.update_hitbox()
+
+                player.update(delta_ms, moved)
 
                 if moved and not player.attacking and player.alive:
                     player.start_footsteps()
@@ -316,11 +349,14 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 network.data.update_local_state(player.rect.center, player.direction, player.attacking, moved, running, player.health)
             else:
                 player.stop_footsteps()
-                player.update_animation(0, False) # Force standing frame
+                player.update(0, False) # Force standing frame
                 # Still get network state to stay synced
                 net_state = network.data.get_game_state()
                 remote_data = net_state["players"]
                 monsters_data = net_state["monsters"]
+                projectiles_data = net_state.get("projectiles", [])
+                boss_active = net_state.get("boss_active", False)
+                boss_room = net_state.get("boss_room", None)
 
             # Process pending hits from the server
             with network.data.lock:
@@ -380,7 +416,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 rp.direction = pdata["dir"]
                 rp.attacking = pdata["attacking"]
                 rp.set_running(pdata.get("running", False))
-                rp.update_animation(delta_ms, pdata.get("moving", False))
+                rp.update(delta_ms, pdata.get("moving", False))
 
                 rp_screen_x = rp.rect.centerx - cam_x
                 rp_screen_y = rp.rect.centery - cam_y
@@ -411,8 +447,10 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     pygame.draw.rect(overlay, (255, 0, 0, 140), overlay.get_rect().inflate(-20, -20), 10)
                     pygame.draw.rect(overlay, (255, 0, 0, 70), overlay.get_rect().inflate(-40, -40), 10)
                     screen.blit(overlay, (0, 0))
-
-                    player.hit_timer -= 1
+                elif player.invincible_timer > 0 and player.dashing:
+                    inv_img = img.copy()
+                    inv_img.set_alpha(150)
+                    screen.blit(inv_img, img_rect)
                 else:
                     screen.blit(img, img_rect)
 
@@ -428,6 +466,8 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                         synced_monsters[mid] = LightMonster(mdata["pos"][0], mdata["pos"][1])
                     elif mtype == "tank":
                         synced_monsters[mid] = TankMonster(mdata["pos"][0], mdata["pos"][1])
+                    elif mtype == "boss":
+                        synced_monsters[mid] = Boss(mdata["pos"][0], mdata["pos"][1], 150)
                     else:
                         synced_monsters[mid] = BasicMonster(mdata["pos"][0], mdata["pos"][1], 150)
                     synced_monsters[mid].health = mdata.get("health", 80)
@@ -451,6 +491,26 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 m_screen_y = m.rect.centery - cam_y
                 m_blit_rect = m.image.get_rect(center=(m_screen_x, m_screen_y))
 
+                # === EFFET DE TRAÎNÉE (MOTION BLUR) POUR LE BOSS ===
+                if mdata.get("type") == "boss":
+                    if not hasattr(m, 'trail'):
+                        m.trail = []
+                    
+                    if mdata.get("state") == "DASH":
+                        m.trail.append((m.rect.centerx, m.rect.centery, m.image.copy()))
+                        if len(m.trail) > 8:
+                            m.trail.pop(0)
+                            
+                        for i, (wx, wy, t_img) in enumerate(m.trail):
+                            alpha = int(255 * (i / len(m.trail)) * 0.5)
+                            trail_img = t_img.copy()
+                            trail_img.fill((255, 255, 255, alpha), special_flags=pygame.BLEND_RGBA_MULT)
+                            t_rect = trail_img.get_rect(center=(wx - cam_x, wy - cam_y))
+                            screen.blit(trail_img, t_rect)
+                    else:
+                        if m.trail:
+                            m.trail.clear()
+
                 if m.hit_timer > 0:
                     # Create a red-tinted version of the image
                     tinted_img = m.image.copy()
@@ -468,6 +528,28 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                             network.hit_monster(mid, player.attack)
                             player.hit_targets.add(mid)
                             m.take_damage(player.attack)
+
+            # Affichage projectiles
+            for p in projectiles_data:
+                p_x = p["x"] - cam_x
+                p_y = p["y"] - cam_y
+                pygame.draw.circle(screen, (255, 100, 0), (int(p_x), int(p_y)), 10)
+
+            # Boss HP Bar
+            for mid, mdata in monsters_data.items():
+                if mdata.get("type") == "boss" and mdata["alive"] and boss_active:
+                    hp_ratio = mdata.get("health", 0) / 150
+                    bar_w = SCREEN_W // 2
+                    bar_h = 30
+                    bar_x = SCREEN_W // 4
+                    bar_y = 50
+                    pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_w, bar_h))
+                    pygame.draw.rect(screen, (200, 0, 0), (bar_x, bar_y, int(bar_w * hp_ratio), bar_h))
+                    pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_w, bar_h), 2)
+                    
+                    font_boss = pygame.font.SysFont("Chiller", 40)
+                    txt = font_boss.render("BOSS", True, (255, 255, 255))
+                    screen.blit(txt, (SCREEN_W // 2 - txt.get_width() // 2, bar_y - 40))
 
             # Affichage brouillard
             fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))

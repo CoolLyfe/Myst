@@ -117,6 +117,16 @@ class Player(Entity):
         self.attack_anim_timer = 0
         self.attack_rate = 80
         self.running = False
+
+        # Propriétés du Dash
+        self.dashing = False
+        self.dash_timer = 0
+        self.dash_duration = 180  # ms
+        self.dash_speed_multiplier = 3.5
+        self.dash_cooldown = 0
+        self.dash_cooldown_duration = 800  # ms
+        self.dash_invincibility_duration = 200  # ms
+        self.dash_direction_vector = pygame.math.Vector2(0, 0)
         
         if len(self.sprite_standing) > 0:
             self.image = self.sprite_standing[0]
@@ -141,7 +151,42 @@ class Player(Entity):
         self.attack_anim_index = 0
         self.attack_anim_timer = 0
 
-    def update_animation(self, dt_ms: int, moving: bool):
+    def start_dash(self):
+        if self.dash_cooldown > 0 or self.dashing or self.attacking:
+            return False
+
+        self.dashing = True
+        self.dash_timer = self.dash_duration
+        self.dash_cooldown = self.dash_cooldown_duration
+        self.invincible_timer = self.dash_invincibility_duration
+
+        # Détermine la direction du dash en fonction des touches pressées
+        keys = pygame.key.get_pressed()
+        dx, dy = 0, 0
+        if keys[pygame.K_z] or keys[pygame.K_UP]: dy -= 1
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]: dy += 1
+        if keys[pygame.K_q] or keys[pygame.K_LEFT]: dx -= 1
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += 1
+
+        if dx == 0 and dy == 0: # Si aucune touche, dash dans la direction actuelle
+            if self.direction == "up": dy = -1
+            elif self.direction == "down": dy = 1
+            elif self.direction == "left": dx = -1
+            elif self.direction == "right": dx = 1
+        
+        self.dash_direction_vector = pygame.math.Vector2(dx, dy)
+        if self.dash_direction_vector.length() > 0:
+            self.dash_direction_vector.normalize_ip()
+        
+        return True
+
+    def update(self, dt_ms: int, moving: bool):
+        super().update(dt_ms) # Met à jour les timers (invincibilité, etc.)
+        if self.dash_cooldown > 0: self.dash_cooldown -= dt_ms
+        if self.dashing:
+            self.dash_timer -= dt_ms
+            if self.dash_timer <= 0: self.dashing = False
+
         if getattr(self, 'attacking', False):
             if self.direction == 'left' and self.sprite_attackL:
                 frames = self.sprite_attackL
