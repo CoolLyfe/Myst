@@ -9,7 +9,7 @@ class BasicMonster(Entity):
     def get_sprites(cls, sprite_size):
         if sprite_size in cls._sprite_cache:
             return cls._sprite_cache[sprite_size]
-
+    # Les try et except c'est pour eviter les crash pendant le chargement des assets
         cache = {
             'attackU': [], 'attackL': [], 'attackR': [], 'attackD': [],
             'walkU': [], 'walkL': [], 'walkR': [], 'walkD': []
