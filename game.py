@@ -417,11 +417,13 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     screen.blit(img, img_rect)
 
             # Affichage monstres
+            # print(f"Processing {len(monsters_data)} monsters")
             for mid, mdata in monsters_data.items():
                 if not mdata["alive"]: continue
                 if mid not in synced_monsters:
                     synced_monsters[mid] = BasicMonster(mdata["pos"][0], mdata["pos"][1], 150)
                     synced_monsters[mid].health = mdata.get("health", 80)
+                    # print(f"New monster {mid} at {mdata['pos']}")
 
                 m = synced_monsters[mid]
 
@@ -462,7 +464,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             # Affichage brouillard
             fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))
             screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-            screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            # screen.blit(fog_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT) # Removed second blit to improve visibility
 
             if not player.alive and not getattr(player, 'spectating', False):
                 is_wipe = not alive_pids

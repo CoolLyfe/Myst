@@ -28,7 +28,6 @@ class ServerNetwork:
     def init_monsters(self):
         import random
         monster_id_counter = 1
-        rooms_with_monsters = 0
         
         # Loop through the map grid
         for grid_y in range(len(self.map_data)):
@@ -36,11 +35,15 @@ class ServerNetwork:
                 room = self.map_data[grid_y][grid_x]
                 room_type = room[0]
                 
-                # Spawn in start (1), classic (3) and fight (5) rooms, and maybe boss (2)
+                # Spawn in spawn (1), classic (3) and fight (5) rooms
                 if room_type in [1, 3, 5]:
-                    rooms_with_monsters += 1
                     # Random number of monsters based on room type
-                    nb_monsters = random.randint(2, 4) if room_type in [1, 3] else random.randint(3, 6)
+                    if room_type == 1:
+                        nb_monsters = random.randint(1, 2)
+                    elif room_type == 3:
+                        nb_monsters = random.randint(2, 4)
+                    else: # type 5
+                        nb_monsters = random.randint(3, 6)
                     
                     for _ in range(nb_monsters):
                         # Random position inside the room (considering gap)
@@ -65,7 +68,6 @@ class ServerNetwork:
                             "target_to_hit": None
                         }
                         monster_id_counter += 1
-        print(f"[SERVER] Spawning {monster_id_counter - 1} monsters in {rooms_with_monsters} rooms.")
 
     def is_walkable(self, x, y):
         # Determine which cell we are in
