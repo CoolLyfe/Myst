@@ -58,7 +58,9 @@ class ServerNetwork:
                             "alive": True,
                             "type": "basic",
                             "attack_cooldown": 0,
-                            "attacking": 0
+                            "attacking": 0,
+                            "attack_windup": 0,
+                            "target_to_hit": None
                         }
                         monster_id_counter += 1
 
@@ -275,6 +277,23 @@ class ServerNetwork:
                 if mstate.get("attacking", 0) > 0:
                     mstate["attacking"] -= 1
                 
+                # Windup logic
+                if mstate.get("attack_windup", 0) > 0:
+                    mstate["attack_windup"] -= 1
+                    if mstate["attack_windup"] == 1: # Land hit on the 8th frame (near end)
+                        target_pid = mstate.get("target_to_hit")
+                        if target_pid and target_pid in self.player_states:
+                            # Re-check distance (allow a bit of leeway as player might have moved)
+                            tpos = self.player_states[target_pid]["pos"]
+                            dx = tpos[0] - mstate["pos"][0]
+                            dy = tpos[1] - mstate["pos"][1]
+                            dist = (dx**2 + dy**2)**0.5
+                            if dist < 110: # Leeway for player movement
+                                for addr, pid in self.clients.items():
+                                    if pid == target_pid:
+                                        await self.send_to({"type": "hit_player", "damage": 1, "monster_x": mstate["pos"][0], "monster_y": mstate["pos"][1]}, addr)
+                                        break
+                
                 if not self.player_states: continue
                 
                 m_grid_x = int(mstate["pos"][0] // 2000)
@@ -309,11 +328,8 @@ class ServerNetwork:
                         if mstate.get("attack_cooldown", 0) <= 0:
                             mstate["attack_cooldown"] = 40 # 2 seconds cooldown at 20fps
                             mstate["attacking"] = 10 # 0.5s animation duration
-                            # Find the target player's address to send the hit message
-                            for addr, pid in self.clients.items():
-                                if pid == target_pid:
-                                    await self.send_to({"type": "hit_player", "damage": 1, "monster_x": mstate["pos"][0], "monster_y": mstate["pos"][1]}, addr)
-                                    break
+                            mstate["attack_windup"] = 9 # Hit on 9th server frame (~450ms)
+                            mstate["target_to_hit"] = target_pid
                     elif 80 <= dist < 1000: # Only move if player is somewhat close but not on top
                         speed = 3
                         vx = (dx/dist) * speed
