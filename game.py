@@ -5,7 +5,7 @@ import asyncio
 import time
 from procedural_gen import create_map_image
 from player import Player
-from monster import BasicMonster, ShadowMonster, LightMonster, TankMonster
+from monster import ShadowMonster, LightMonster, TankMonster
 from server import ServerNetwork
 from client import ClientNetwork, run_client_network
 
