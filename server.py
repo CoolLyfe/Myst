@@ -53,7 +53,7 @@ class ServerNetwork:
                             hw, hh = 50, 60
                         elif mtype == "tank":
                             hp, speed, det_range, atk_range, cd_max = 400, 1, 350, 120, 50
-                            hw, hh = 80, 80
+                            hw, hh = 125, 125
                         
                         # Find a valid spawn position inside the room
                         cell_size = 2000
