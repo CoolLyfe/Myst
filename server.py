@@ -44,11 +44,8 @@ class ServerNetwork:
                         nb_monsters = random.randint(3, 6)
 
                     for _ in range(nb_monsters):
-                        mtype = random.choice(["basic", "shadow", "light", "tank"])
-                        if mtype == "basic":
-                            hp, speed, det_range, atk_range, cd_max = 80, 3, 500, 80, 40
-                            hw, hh = 40, 45
-                        elif mtype == "shadow":
+                        mtype = random.choice(["shadow", "light", "tank"])
+                        if mtype == "shadow":
                             hp, speed, det_range, atk_range, cd_max = 150, 2, 400, 90, 30
                             hw, hh = 65, 75
                         elif mtype == "light":
@@ -287,7 +284,7 @@ class ServerNetwork:
                         "pos": mstate["pos"],
                         "health": mstate["health"],
                         "alive": mstate["alive"],
-                        "type": mstate.get("type", "basic"),
+                        "type": mstate.get("type", "shadow"),
                         "dir": mstate.get("dir", "down"),
                         "moving": mstate.get("moving", False),
                         "attacking": mstate.get("attacking", 0)
