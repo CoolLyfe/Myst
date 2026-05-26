@@ -73,10 +73,9 @@ class BasicMonster(Entity):
             if self.anim_timer >= self.anim_rate:
                 self.anim_timer = 0
                 self.attack_anim_index += 1
-                if self.attack_anim_index >= len(frames):
-                    self.attack_anim_index = 0
             
-            if 0 <= self.attack_anim_index < len(frames):
+            if len(frames) > 0:
+                self.attack_anim_index = self.attack_anim_index % len(frames)
                 self.image = frames[self.attack_anim_index]
         elif is_moving:
             if self.direction == 'up': frames = self.sprite_walkU
@@ -88,18 +87,18 @@ class BasicMonster(Entity):
             if self.anim_timer >= self.anim_rate:
                 self.anim_timer = 0
                 self.walk_anim_index += 1
-                if self.walk_anim_index >= len(frames):
-                    self.walk_anim_index = 0
-            
-            if 0 <= self.walk_anim_index < len(frames):
+                
+            # Safely clamp the index to prevent out-of-bounds
+            if len(frames) > 0:
+                self.walk_anim_index = self.walk_anim_index % len(frames)
                 self.image = frames[self.walk_anim_index]
             self.attack_anim_index = 0
         else:
             # Idle
-            if self.direction == 'up': self.image = self.sprite_walkU[0]
-            elif self.direction == 'left': self.image = self.sprite_walkL[0]
-            elif self.direction == 'right': self.image = self.sprite_walkR[0]
-            else: self.image = self.sprite_walkD[0]
+            if self.direction == 'up' and self.sprite_walkU: self.image = self.sprite_walkU[0]
+            elif self.direction == 'left' and self.sprite_walkL: self.image = self.sprite_walkL[0]
+            elif self.direction == 'right' and self.sprite_walkR: self.image = self.sprite_walkR[0]
+            elif self.sprite_walkD: self.image = self.sprite_walkD[0]
             self.attack_anim_index = 0
             self.walk_anim_index = 0
             self.anim_timer = 0
