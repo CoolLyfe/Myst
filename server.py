@@ -96,7 +96,7 @@ class ServerNetwork:
         # Check if inside room (with gap and wall thickness)
         cell_size = 2000
         gap = 400
-        wall_thick = 120
+        wall_thick = 170
         room_left = grid_x * cell_size + gap // 2 + wall_thick
         room_right = (grid_x + 1) * cell_size - gap // 2 - wall_thick
         room_top = grid_y * cell_size + gap // 2 + wall_thick

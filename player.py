@@ -251,7 +251,7 @@ class Player(Entity):
     def is_position_walkable_geom(self, x, y, map_data):
         cell_size = 2000
         gap = 400
-        wall_thick = 120
+        wall_thick = 170
 
         grid_x = int(x // cell_size)
         grid_y = int(y // cell_size)
