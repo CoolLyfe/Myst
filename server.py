@@ -25,14 +25,14 @@ class ServerNetwork:
         print("[SERVER] Generating global map...")
         self.map_data, self.start_data = procedural_gen()
         print(f"[SERVER] Map generated at start {self.start_data}")
-        
+
         # Initialize some monsters based on the map
         self.init_monsters()
 
     def init_monsters(self):
         import random
         monster_id_counter = 1
-        
+
         # Loop through the map grid
         for grid_y in range(len(self.map_data)):
             for grid_x in range(len(self.map_data[grid_y])):
@@ -50,29 +50,42 @@ class ServerNetwork:
                         nb_monsters = random.randint(2, 4)
                     else: # type 5
                         nb_monsters = random.randint(3, 6)
-                    
+
                     for _ in range(nb_monsters):
-                        # Random position inside the room (considering gap)
+                        mtype = random.choice(["shadow", "light", "tank"])
+                        if mtype == "shadow":
+                            hp, speed, det_range, atk_range, cd_max = 150, 2, 800, 100, 30
+                            hw, hh = 80, 80
+                        elif mtype == "light":
+                            hp, speed, det_range, atk_range, cd_max = 50, 5, 1000, 80, 14
+                            hw, hh = 60, 60
+                        elif mtype == "tank":
+                            hp, speed, det_range, atk_range, cd_max = 400, 1, 600, 150, 50
+                            hw, hh = 130, 130
+
+                        # Find a valid spawn position inside the room
                         cell_size = 2000
                         gap = 400
-                        room_left = grid_x * cell_size + gap // 2 + 100
-                        room_right = (grid_x + 1) * cell_size - gap // 2 - 100
-                        room_top = grid_y * cell_size + gap // 2 + 100
-                        room_bottom = (grid_y + 1) * cell_size - gap // 2 - 100
-                        
+                        wall_thick = 120
+                        # Margin includes wall thickness + monster hitbox + safety buffer
+                        margin_x = wall_thick + hw + 20
+                        margin_y = wall_thick + hh + 20
+
+                        room_left = grid_x * cell_size + gap // 2 + margin_x
+                        room_right = (grid_x + 1) * cell_size - gap // 2 - margin_x
+                        room_top = grid_y * cell_size + gap // 2 + margin_y
+                        room_bottom = (grid_y + 1) * cell_size - gap // 2 - margin_y
+
                         spawn_x = random.uniform(room_left, room_right)
                         spawn_y = random.uniform(room_top, room_bottom)
-                        
-                        mtype = random.choice(["basic", "shadow", "light", "tank"])
-                        if mtype == "basic":
-                            hp, speed, det_range, atk_range, cd_max = 80, 3, 500, 80, 40
-                        elif mtype == "shadow":
-                            hp, speed, det_range, atk_range, cd_max = 150, 2, 400, 90, 30
-                        elif mtype == "light":
-                            hp, speed, det_range, atk_range, cd_max = 50, 5, 700, 70, 14
-                        elif mtype == "tank":
-                            hp, speed, det_range, atk_range, cd_max = 400, 1, 350, 120, 50
-                        
+
+                        # Verify position is actually walkable with hitbox
+                        attempts = 0
+                        while not self.is_pos_walkable_with_hitbox(spawn_x, spawn_y, hw, hh) and attempts < 10:
+                            spawn_x = random.uniform(room_left, room_right)
+                            spawn_y = random.uniform(room_top, room_bottom)
+                            attempts += 1
+
                         self.monster_states[str(monster_id_counter)] = {
                             "pos": [spawn_x, spawn_y],
                             "health": hp,
@@ -85,7 +98,9 @@ class ServerNetwork:
                             "attack_cooldown": 0,
                             "attacking": 0,
                             "patrol_timer": 0,
-                            "patrol_dir": "down"
+                            "patrol_dir": "down",
+                            "hitbox_hw": hw,
+                            "hitbox_hh": hh
                         }
                         monster_id_counter += 1
 
@@ -108,28 +123,29 @@ class ServerNetwork:
 
         if not (0 <= grid_x < 8 and 0 <= grid_y < 5):
             return False
-        
+
         room = self.map_data[grid_y][grid_x]
         if room[0] == 0:
             return False
-            
-        # Check if inside room (with gap)
+
+        # Check if inside room (with gap and wall thickness)
         cell_size = 2000
         gap = 400
-        room_left = grid_x * cell_size + gap // 2
-        room_right = (grid_x + 1) * cell_size - gap // 2
-        room_top = grid_y * cell_size + gap // 2
-        room_bottom = (grid_y + 1) * cell_size - gap // 2
-        
+        wall_thick = 120
+        room_left = grid_x * cell_size + gap // 2 + wall_thick
+        room_right = (grid_x + 1) * cell_size - gap // 2 - wall_thick
+        room_top = grid_y * cell_size + gap // 2 + wall_thick
+        room_bottom = (grid_y + 1) * cell_size - gap // 2 - wall_thick
+
         if room_left <= x <= room_right and room_top <= y <= room_bottom:
             return True
-            
+
         # Check if inside corridors
         thickness = cell_size // 12
         half_thick = thickness // 2
         center_x = grid_x * cell_size + cell_size // 2
         center_y = grid_y * cell_size + cell_size // 2
-        
+
         for conn in room[1]:
             if conn == "N" and y < center_y:
                 if center_x - half_thick <= x <= center_x + half_thick:
@@ -143,8 +159,15 @@ class ServerNetwork:
             elif conn == "O" and x < center_x:
                 if center_y - half_thick <= y <= center_y + half_thick:
                     return True
-                    
+
         return False
+
+    def is_pos_walkable_with_hitbox(self, x, y, hw, hh):
+        # Check 5 points around the position to account for the entity's hitbox
+        for dx, dy in [(0, 0), (-hw, -hh), (hw, -hh), (-hw, hh), (hw, hh)]:
+            if not self.is_walkable(x + dx, y + dy):
+                return False
+        return True
 
     async def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -156,13 +179,13 @@ class ServerNetwork:
         print(f"[SERVER] UDP Server listening on {self.host}:{self.port}")
 
         self.loop = asyncio.get_running_loop()
-        
+
         # Start background tasks
         asyncio.create_task(self.broadcast_loop())
         asyncio.create_task(self.monster_ai_loop())
         if self.room_name:
             asyncio.create_task(self.lan_announcer())
-        
+
         while self.running:
             try:
                 data, addr = await self.loop.sock_recvfrom(self.sock, 8192)
@@ -174,7 +197,7 @@ class ServerNetwork:
 
     async def handle_message(self, data, addr):
         # Debug: track all incoming traffic
-        # print(f"[SERVER] Data from {addr}: {data[:50]}...") 
+        # print(f"[SERVER] Data from {addr}: {data[:50]}...")
         try:
             msg = json.loads(data.decode())
         except Exception as e:
@@ -202,7 +225,7 @@ class ServerNetwork:
                     "last_seen": time.time()
                 }
                 print(f"[SERVER] Player {pid} joined from {addr}")
-            
+
             pid = self.clients[addr]
             welcome = {
                 "type": "welcome",
@@ -218,7 +241,7 @@ class ServerNetwork:
                 state = msg.get("state", {})
                 self.player_states[pid].update(state)
                 self.player_states[pid]["last_seen"] = time.time()
-                
+
         elif msg_type == "attack":
             # Server could validate attack here
             # For now, we trust the client to tell us if they hit a monster
@@ -227,13 +250,13 @@ class ServerNetwork:
             if pid:
                 self.player_states[pid]["attacking"] = True
                 # In a real game, server would check hitboxes here
-        
+
         elif msg_type == "hit_monster":
             mid = str(msg.get("monster_id"))
             dmg = msg.get("damage", 10)
             if mid in self.monster_states:
                 self.monster_states[mid]["health"] -= dmg
-                
+
                 # Apply knockback
                 pid = self.clients.get(addr)
                 if pid and pid in self.player_states:
@@ -246,7 +269,7 @@ class ServerNetwork:
                         kb_strength = 15
                         self.monster_states[mid]["kb_vx"] = (dx/dist) * kb_strength
                         self.monster_states[mid]["kb_vy"] = (dy/dist) * kb_strength
-                
+
                 print(f"[SERVER] Monster {mid} took {dmg} damage, health: {self.monster_states[mid]['health']}")
                 if self.monster_states[mid]["health"] <= 0:
                     self.monster_states[mid]["alive"] = False
@@ -268,7 +291,7 @@ class ServerNetwork:
             for addr, pid in list(self.clients.items()):
                 if now - self.player_states[pid]["last_seen"] > 5.0:
                     to_remove.append(addr)
-            
+
             for addr in to_remove:
                 pid = self.clients.pop(addr)
                 self.player_states.pop(pid)
@@ -283,7 +306,7 @@ class ServerNetwork:
                         "pos": mstate["pos"],
                         "health": mstate["health"],
                         "alive": mstate["alive"],
-                        "type": mstate.get("type", "basic"),
+                        "type": mstate.get("type", "shadow"),
                         "dir": mstate.get("dir", "down"),
                         "moving": mstate.get("moving", False),
                         "attacking": mstate.get("attacking", 0),
@@ -300,7 +323,7 @@ class ServerNetwork:
                 }
                 for addr in self.clients:
                     await self.send_to(sync_msg, addr)
-            
+
             await asyncio.sleep(1/30) # 30 FPS updates
 
     async def monster_ai_loop(self):
@@ -357,29 +380,32 @@ class ServerNetwork:
 
             for mid, mstate in self.monster_states.items():
                 if not mstate["alive"]: continue
-                
+
+                hw = mstate.get("hitbox_hw", 30)
+                hh = mstate.get("hitbox_hh", 30)
+
                 # Apply smooth knockback if any
                 kb_vx = mstate.get("kb_vx", 0)
                 kb_vy = mstate.get("kb_vy", 0)
                 is_knocked_back = abs(kb_vx) > 1 or abs(kb_vy) > 1
-                
+
                 if is_knocked_back:
                     new_x = mstate["pos"][0] + kb_vx
                     new_y = mstate["pos"][1] + kb_vy
-                    if self.is_walkable(new_x, new_y):
+                    if self.is_pos_walkable_with_hitbox(new_x, new_y, hw, hh):
                         mstate["pos"][0] = new_x
                         mstate["pos"][1] = new_y
                     else:
-                        if self.is_walkable(new_x, mstate["pos"][1]): mstate["pos"][0] = new_x
-                        if self.is_walkable(mstate["pos"][0], new_y): mstate["pos"][1] = new_y
-                    
+                        if self.is_pos_walkable_with_hitbox(new_x, mstate["pos"][1], hw, hh): mstate["pos"][0] = new_x
+                        if self.is_pos_walkable_with_hitbox(mstate["pos"][0], new_y, hw, hh): mstate["pos"][1] = new_y
+
                     mstate["kb_vx"] = kb_vx * 0.8
                     mstate["kb_vy"] = kb_vy * 0.8
-                
+
                 # Decrement attack cooldown
                 if mstate.get("attack_cooldown", 0) > 0:
                     mstate["attack_cooldown"] -= 1
-                
+
                 # Decrement attacking timer
                 if mstate.get("attacking", 0) > 0:
                     mstate["attacking"] -= 1
@@ -393,7 +419,7 @@ class ServerNetwork:
                                 for addr, cid in self.clients.items():
                                     if cid == pid:
                                         await self.send_to({"type": "hit_player", "damage": 1, "monster_x": mstate["pos"][0], "monster_y": mstate["pos"][1]}, addr)
-                
+
                 if not self.player_states: continue
                 
                 # ================= IA DU BOSS =================
@@ -411,35 +437,35 @@ class ServerNetwork:
 
                 m_grid_x = int(mstate["pos"][0] // 2000)
                 m_grid_y = int(mstate["pos"][1] // 2000)
-                
+
                 # Find nearest player in the same room
                 target_pid = None
                 min_dist = float('inf')
                 for pid, pstate in self.player_states.items():
                     if pstate.get("health", 1) <= 0:
                         continue
-                    
+
                     p_grid_x = int(pstate["pos"][0] // 2000)
                     p_grid_y = int(pstate["pos"][1] // 2000)
-                    
+
                     # Only aggro players in the exact same room cell
                     if m_grid_x != p_grid_x or m_grid_y != p_grid_y:
                         continue
-                        
+
                     dist_sq = (pstate["pos"][0] - mstate["pos"][0])**2 + (pstate["pos"][1] - mstate["pos"][1])**2
                     if dist_sq < min_dist:
                         min_dist = dist_sq
                         target_pid = pid
-                
+
                 if target_pid and not is_knocked_back:
                     tpos = self.player_states[target_pid]["pos"]
                     dx = tpos[0] - mstate["pos"][0]
                     dy = tpos[1] - mstate["pos"][1]
                     dist = (dx**2 + dy**2)**0.5
-                    
+
                     if dist > mstate.get("detection_range", 500):
                         target_pid = None # Too far, lose aggro
-                
+
                 if target_pid is None and not is_knocked_back:
                     # Patrol state
                     if mstate.get("patrol_timer", 0) <= 0:
@@ -458,20 +484,20 @@ class ServerNetwork:
 
                     new_x = mstate["pos"][0] + vx
                     new_y = mstate["pos"][1] + vy
-                    
-                    if self.is_walkable(new_x, new_y):
+
+                    if self.is_pos_walkable_with_hitbox(new_x, new_y, hw, hh):
                         mstate["pos"][0] = new_x
                         mstate["pos"][1] = new_y
                         mstate["moving"] = True
                     else:
                         mstate["moving"] = False
-                        if self.is_walkable(new_x, mstate["pos"][1]):
+                        if self.is_pos_walkable_with_hitbox(new_x, mstate["pos"][1], hw, hh):
                             mstate["pos"][0] = new_x
                             mstate["moving"] = True
-                        elif self.is_walkable(mstate["pos"][0], new_y):
+                        elif self.is_pos_walkable_with_hitbox(mstate["pos"][0], new_y, hw, hh):
                             mstate["pos"][1] = new_y
                             mstate["moving"] = True
-                            
+
                     mstate["dir"] = p_dir
 
                 elif target_pid and not is_knocked_back:
@@ -479,7 +505,7 @@ class ServerNetwork:
                     dx = tpos[0] - mstate["pos"][0]
                     dy = tpos[1] - mstate["pos"][1]
                     dist = (dx**2 + dy**2)**0.5
-                    
+
                     atk_range = mstate.get("attack_range", 80)
                     if dist <= atk_range: # Attack state
                         if mstate.get("attack_cooldown", 0) <= 0:
@@ -489,23 +515,23 @@ class ServerNetwork:
                         speed = mstate.get("speed", 3)
                         vx = (dx/dist) * speed
                         vy = (dy/dist) * speed
-                        
+
                         # Try moving in both axes
                         new_x = mstate["pos"][0] + vx
                         new_y = mstate["pos"][1] + vy
-                        
-                        if self.is_walkable(new_x, new_y):
+
+                        if self.is_pos_walkable_with_hitbox(new_x, new_y, hw, hh):
                             mstate["pos"][0] = new_x
                             mstate["pos"][1] = new_y
                             mstate["moving"] = True
                         else:
                             mstate["moving"] = False
                             # Try sliding along X
-                            if self.is_walkable(new_x, mstate["pos"][1]):
+                            if self.is_pos_walkable_with_hitbox(new_x, mstate["pos"][1], hw, hh):
                                 mstate["pos"][0] = new_x
                                 mstate["moving"] = True
                             # Try sliding along Y
-                            elif self.is_walkable(mstate["pos"][0], new_y):
+                            elif self.is_pos_walkable_with_hitbox(mstate["pos"][0], new_y, hw, hh):
                                 mstate["pos"][1] = new_y
                                 mstate["moving"] = True
 
@@ -514,7 +540,7 @@ class ServerNetwork:
                             mstate["dir"] = "right" if dx > 0 else "left"
                         else:
                             mstate["dir"] = "down" if dy > 0 else "up"
-            
+
             await asyncio.sleep(1/20)
 
     async def send_to(self, msg, addr):
@@ -529,10 +555,10 @@ class ServerNetwork:
         broadcast_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         broadcast_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         broadcast_sock.setblocking(False)
-        
+
         msg = f"MYST_SERVER:{self.room_name}:{self.port}".encode()
         print(f"[SERVER] LAN Announcer started for room: {self.room_name}")
-        
+
         def get_broadcast_ips():
             ips = ["<broadcast>", "255.255.255.255"]
             try:
@@ -582,7 +608,7 @@ class ServerNetwork:
             print("[SERVER] Stopping server for restart (skipping shutdown broadcast)...")
             self.running = False
             return
-            
+
         print("[SERVER] Shutting down...")
         shutdown_msg = {"type": "shutdown"}
         for addr in self.clients:

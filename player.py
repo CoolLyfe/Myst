@@ -13,8 +13,8 @@ class Player(Entity):
             pos_x=pos_x,
             pos_y=pos_y,
             sprite_size=sprite_size,
-            hitbox_width=int(sprite_size * 0.55),
-            hitbox_height=int(sprite_size * 0.75),
+            hitbox_width=int(sprite_size * 0.7),
+            hitbox_height=int(sprite_size * 0.8),
         )
         self.size = sprite_size
         self.sprite_standing = []
@@ -26,7 +26,7 @@ class Player(Entity):
         self.sprite_attackL = []
         self.sprite_attackR = []
         self.sprite_attackD = []
-            
+
         img = pygame.image.load("assets/player/player_standing_1.png").convert_alpha()
         self.sprite_standing.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
         img = pygame.image.load("assets/player/player_standing_2.png").convert_alpha()
@@ -98,7 +98,7 @@ class Player(Entity):
         img = pygame.image.load("assets/player/player_Dattaque_4.png").convert_alpha()
         self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
 
-        self.sword_swing_sfx = pygame.mixer.Sound("assets/sound/sword_swing.mp3") 
+        self.sword_swing_sfx = pygame.mixer.Sound("assets/sound/sword_swing.mp3")
         self.sword_swing_sfx.set_volume(0.3)
 
         self.drink_potion_sfx = pygame.mixer.Sound("assets/sound/drink_potion.mp3")
@@ -111,7 +111,7 @@ class Player(Entity):
         self.anim_index = 0
         self.anim_timer = 0
         self.anim_rate_walk = 150
-        self.anim_rate_run = 50 
+        self.anim_rate_run = 50
         # Attack animation state
         self.attack_anim_index = 0
         self.attack_anim_timer = 0
@@ -246,7 +246,7 @@ class Player(Entity):
 
         self.image = frames[self.anim_index]
 
-    def move(self, dx, dy, map_width, map_height, lamap):
+    def move(self, dx, dy, map_width, map_height, lamap, map_data=None):
         # Calcul de la nouvelle position proposee
         new_x = self.rect.centerx + dx
         new_y = self.rect.centery + dy
@@ -267,11 +267,24 @@ class Player(Entity):
         elif dy < 0:
             self.direction = "up"
 
-        # Test de collision transparence ( si map_surface fournie )
-        if lamap is not None:
+        # Test de collision (geometrique si map_data fourni, sinon alpha)
+        if map_data is not None:
+            # Check 5 points to cover the hitbox (center and 4 corners)
+            hw = self.hitbox.width // 2
+            hh = self.hitbox.height // 2
+            pts_to_check = [
+                (clamped_x, clamped_y),
+                (clamped_x - hw, clamped_y - hh),
+                (clamped_x + hw, clamped_y - hh),
+                (clamped_x - hw, clamped_y + hh),
+                (clamped_x + hw, clamped_y + hh)
+            ]
+            for px, py in pts_to_check:
+                if not self.is_position_walkable_geom(px, py, map_data):
+                    return False
+        elif lamap is not None:
             test_rect = self.rect.copy()
             test_rect.center = (clamped_x, clamped_y)
-
             if not self.is_position_walkable(test_rect, lamap):
                 return False
 
@@ -279,6 +292,52 @@ class Player(Entity):
         self.update_hitbox()
         # Deplacement du joueur + limite aux bords de la map + collision
         return True
+
+    def is_position_walkable_geom(self, x, y, map_data):
+        cell_size = 2000
+        gap = 400
+        wall_thick = 120
+
+        grid_x = int(x // cell_size)
+        grid_y = int(y // cell_size)
+
+        if not (0 <= grid_x < len(map_data[0]) and 0 <= grid_y < len(map_data)):
+            return False
+
+        room = map_data[grid_y][grid_x]
+        if room[0] == 0:
+            return False
+
+        # Check inside room (with gap and wall thickness)
+        room_left = grid_x * cell_size + gap // 2 + wall_thick
+        room_right = (grid_x + 1) * cell_size - gap // 2 - wall_thick
+        room_top = grid_y * cell_size + gap // 2 + wall_thick
+        room_bottom = (grid_y + 1) * cell_size - gap // 2 - wall_thick
+
+        if room_left <= x <= room_right and room_top <= y <= room_bottom:
+            return True
+
+        # Check inside corridors
+        thickness = cell_size // 12
+        half_thick = thickness // 2
+        center_x = grid_x * cell_size + cell_size // 2
+        center_y = grid_y * cell_size + cell_size // 2
+
+        for conn in room[1]:
+            if conn == "N" and y < center_y:
+                if center_x - half_thick <= x <= center_x + half_thick:
+                    return True
+            elif conn == "S" and y > center_y:
+                if center_x - half_thick <= x <= center_x + half_thick:
+                    return True
+            elif conn == "E" and x > center_x:
+                if center_y - half_thick <= y <= center_y + half_thick:
+                    return True
+            elif conn == "O" and x < center_x:
+                if center_y - half_thick <= y <= center_y + half_thick:
+                    return True
+
+        return False
 
     def is_position_walkable(self, rect, map_surface):
         pts = [

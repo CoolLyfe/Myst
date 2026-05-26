@@ -5,7 +5,7 @@ import asyncio
 import time
 from procedural_gen import create_map_image
 from player import Player
-from monster import BasicMonster, ShadowMonster, LightMonster, TankMonster
+from monster import ShadowMonster, LightMonster, TankMonster
 from server import ServerNetwork
 from client import ClientNetwork, run_client_network
 from boss import Boss
@@ -104,7 +104,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
     # --- Entités Multi ---
     remote_players = {} # id -> Player
-    synced_monsters = {} # id -> BasicMonster
+    synced_monsters = {} # id -> Monster
 
     # --- Camera ---
     def get_camera_offset(cx, cy):
@@ -270,48 +270,48 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]):
                         if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
                             dx -= speedcross
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dx += speedcross
                             dy -= speedcross
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dy += speedcross
                         elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
                             dx += speedcross
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dx -= speedcross
                             dy -= speedcross
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dy += speedcross
                         else :
                             dy -= player.speed
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dy += player.speed
                     elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]):
                         if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
                             dx -= speedcross
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dx += speedcross
                             dy += speedcross
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dy -= speedcross
                         elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
                             dx += speedcross
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dx -= speedcross
                             dy += speedcross
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dy -= speedcross
                         else :
                             dy += player.speed
-                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                             dy -= player.speed
                     elif not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
                         dx -= player.speed
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                         dx += player.speed
                     elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
                         dx += player.speed
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
                         dx -= player.speed
 
                     running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
@@ -378,7 +378,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             # Apply smooth knockback locally
             if getattr(player, 'kb_vx', 0) != 0 or getattr(player, 'kb_vy', 0) != 0:
                 old_dir = player.direction
-                player.move(player.kb_vx, player.kb_vy, lamap.get_width(), lamap.get_height(), lamap)
+                player.move(player.kb_vx, player.kb_vy, MAP_W, MAP_H, lamap, map_data=map_data)
                 player.direction = old_dir
                 player.kb_vx *= 0.8
                 player.kb_vy *= 0.8
@@ -459,7 +459,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             for mid, mdata in monsters_data.items():
                 if not mdata["alive"]: continue
                 if mid not in synced_monsters:
-                    mtype = mdata.get("type", "basic")
+                    mtype = mdata.get("type", "shadow")
                     if mtype == "shadow":
                         synced_monsters[mid] = ShadowMonster(mdata["pos"][0], mdata["pos"][1])
                     elif mtype == "light":
@@ -469,8 +469,8 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     elif mtype == "boss":
                         synced_monsters[mid] = Boss(mdata["pos"][0], mdata["pos"][1], 150)
                     else:
-                        synced_monsters[mid] = BasicMonster(mdata["pos"][0], mdata["pos"][1], 150)
-                    synced_monsters[mid].health = mdata.get("health", 80)
+                        synced_monsters[mid] = ShadowMonster(mdata["pos"][0], mdata["pos"][1])
+                    synced_monsters[mid].health = mdata.get("health", 150)
                     # print(f"New monster {mid} at {mdata['pos']}")
                 
                 m = synced_monsters[mid]
