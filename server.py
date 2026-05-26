@@ -58,13 +58,17 @@ class ServerNetwork:
                         mtype = random.choice(["basic", "shadow", "light", "tank"])
                         if mtype == "basic":
                             hp, speed, det_range, atk_range, cd_max = 80, 3, 500, 80, 40
+                            hw, hh = 55 // 2, 75 // 2
                         elif mtype == "shadow":
                             hp, speed, det_range, atk_range, cd_max = 150, 2, 400, 90, 30
+                            hw, hh = 99 // 2, 135 // 2
                         elif mtype == "light":
                             hp, speed, det_range, atk_range, cd_max = 50, 5, 700, 70, 14
+                            hw, hh = 74 // 2, 101 // 2
                         elif mtype == "tank":
                             hp, speed, det_range, atk_range, cd_max = 400, 1, 350, 120, 50
-
+                            hw, hh = 140 // 2, 191 // 2
+                        
                         self.monster_states[str(monster_id_counter)] = {
                             "pos": [spawn_x, spawn_y],
                             "health": hp,
@@ -77,7 +81,9 @@ class ServerNetwork:
                             "attack_cooldown": 0,
                             "attacking": 0,
                             "patrol_timer": 0,
-                            "patrol_dir": "down"
+                            "patrol_dir": "down",
+                            "hitbox_hw": hw,
+                            "hitbox_hh": hh
                         }
                         monster_id_counter += 1
 
@@ -127,9 +133,9 @@ class ServerNetwork:
 
         return False
 
-    def is_pos_walkable_with_radius(self, x, y, radius):
+    def is_pos_walkable_with_hitbox(self, x, y, hw, hh):
         # Check 5 points around the position to account for the entity's hitbox
-        for dx, dy in [(0, 0), (-radius, -radius), (radius, -radius), (-radius, radius), (radius, radius)]:
+        for dx, dy in [(0, 0), (-hw, -hh), (hw, -hh), (-hw, hh), (hw, hh)]:
             if not self.is_walkable(x + dx, y + dy):
                 return False
         return True
@@ -291,6 +297,9 @@ class ServerNetwork:
             for mid, mstate in self.monster_states.items():
                 if not mstate["alive"]: continue
 
+                hw = mstate.get("hitbox_hw", 30)
+                hh = mstate.get("hitbox_hh", 30)
+
                 # Apply smooth knockback if any
                 kb_vx = mstate.get("kb_vx", 0)
                 kb_vy = mstate.get("kb_vy", 0)
@@ -299,12 +308,12 @@ class ServerNetwork:
                 if is_knocked_back:
                     new_x = mstate["pos"][0] + kb_vx
                     new_y = mstate["pos"][1] + kb_vy
-                    if self.is_pos_walkable_with_radius(new_x, new_y, 30):
+                    if self.is_pos_walkable_with_hitbox(new_x, new_y, hw, hh):
                         mstate["pos"][0] = new_x
                         mstate["pos"][1] = new_y
                     else:
-                        if self.is_pos_walkable_with_radius(new_x, mstate["pos"][1], 30): mstate["pos"][0] = new_x
-                        if self.is_pos_walkable_with_radius(mstate["pos"][0], new_y, 30): mstate["pos"][1] = new_y
+                        if self.is_pos_walkable_with_hitbox(new_x, mstate["pos"][1], hw, hh): mstate["pos"][0] = new_x
+                        if self.is_pos_walkable_with_hitbox(mstate["pos"][0], new_y, hw, hh): mstate["pos"][1] = new_y
 
                     mstate["kb_vx"] = kb_vx * 0.8
                     mstate["kb_vy"] = kb_vy * 0.8
@@ -379,16 +388,16 @@ class ServerNetwork:
                     new_x = mstate["pos"][0] + vx
                     new_y = mstate["pos"][1] + vy
 
-                    if self.is_pos_walkable_with_radius(new_x, new_y, 30):
+                    if self.is_pos_walkable_with_hitbox(new_x, new_y, hw, hh):
                         mstate["pos"][0] = new_x
                         mstate["pos"][1] = new_y
                         mstate["moving"] = True
                     else:
                         mstate["moving"] = False
-                        if self.is_pos_walkable_with_radius(new_x, mstate["pos"][1], 30):
+                        if self.is_pos_walkable_with_hitbox(new_x, mstate["pos"][1], hw, hh):
                             mstate["pos"][0] = new_x
                             mstate["moving"] = True
-                        elif self.is_pos_walkable_with_radius(mstate["pos"][0], new_y, 30):
+                        elif self.is_pos_walkable_with_hitbox(mstate["pos"][0], new_y, hw, hh):
                             mstate["pos"][1] = new_y
                             mstate["moving"] = True
 
@@ -414,18 +423,18 @@ class ServerNetwork:
                         new_x = mstate["pos"][0] + vx
                         new_y = mstate["pos"][1] + vy
 
-                        if self.is_pos_walkable_with_radius(new_x, new_y, 30):
+                        if self.is_pos_walkable_with_hitbox(new_x, new_y, hw, hh):
                             mstate["pos"][0] = new_x
                             mstate["pos"][1] = new_y
                             mstate["moving"] = True
                         else:
                             mstate["moving"] = False
                             # Try sliding along X
-                            if self.is_pos_walkable_with_radius(new_x, mstate["pos"][1], 30):
+                            if self.is_pos_walkable_with_hitbox(new_x, mstate["pos"][1], hw, hh):
                                 mstate["pos"][0] = new_x
                                 mstate["moving"] = True
                             # Try sliding along Y
-                            elif self.is_pos_walkable_with_radius(mstate["pos"][0], new_y, 30):
+                            elif self.is_pos_walkable_with_hitbox(mstate["pos"][0], new_y, hw, hh):
                                 mstate["pos"][1] = new_y
                                 mstate["moving"] = True
 
