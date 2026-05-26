@@ -86,6 +86,9 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     SCREEN_W, SCREEN_H = 1920, 1080
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.FULLSCREEN)
     pygame.display.set_caption("Myst Multiplayer")
+    
+    # Clear monster sprite cache to ensure surfaces are bound to the new display context
+    BasicMonster.clear_cache()
 
     background = pygame.image.load("assets/background_jsp.png").convert()
     lamap = pygame.image.fromstring(map_surface_pil.tobytes(), map_surface_pil.size, map_surface_pil.mode).convert_alpha()
