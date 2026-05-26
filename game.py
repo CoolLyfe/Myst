@@ -96,7 +96,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     heal_potion_image = pygame.image.load("assets/heal_potion.png").convert_alpha()
 
     # --- Joueur Local ---
-    player_size = 115
+    player_size = 120
     player_start_x = start_data[0] * cell_size + cell_size // 2
     player_start_y = start_data[1] * cell_size + cell_size // 2
     player = Player(player_start_x, player_start_y, player_size)
@@ -487,6 +487,8 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
                 # Update monster direction based on movement if server provides it
                 m.direction = mdata.get("dir", "down")
+                if mdata.get("type") == "boss":
+                    m.state = mdata.get("state", "WALK")
                 m.update_animation(delta_ms, mdata.get("moving", False), mdata.get("attacking", 0) > 0)
 
                 m_screen_x = m.rect.centerx - cam_x

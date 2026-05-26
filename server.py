@@ -373,7 +373,8 @@ class ServerNetwork:
                             "cooldown_timer": 800, "action_timer": 0,
                             "action_queue": [], "in_giga_combo": False,
                             "force_attack_next": False, "last_action": None,
-                            "move_dir": [0, 0], "attack_cooldown": 0, "attacking": 0
+                            "move_dir": [0, 0], "attack_cooldown": 0, "attacking": 0,
+                            "hitbox_hw": 60, "hitbox_hh": 60
                         }
                         print("[SERVER] Boss Activé ! Portes verrouillées.")
                         break
@@ -425,7 +426,8 @@ class ServerNetwork:
                 # ================= IA DU BOSS =================
                 if mstate.get("type") == "boss":
                     from boss import server_update_boss
-                    hits, new_projs = server_update_boss(mstate, self.player_states, self.is_walkable, 50)
+                    boss_walkable_fn = lambda x, y: self.is_pos_walkable_with_hitbox(x, y, hw, hh)
+                    hits, new_projs = server_update_boss(mstate, self.player_states, boss_walkable_fn, 50)
                     if new_projs:
                         self.projectiles.extend(new_projs)
                         
