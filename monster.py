@@ -149,34 +149,23 @@ class Monster(Entity):
         
         # Chasae
         if distance > self.attack_range:
-
             self.state = "chase"
-
             if distance != 0:
                 distance_x /= distance
                 distance_y /= distance
-
             dx = distance_x * self.speed
             dy = distance_y * self.speed
-
             self.move(dx, dy, map_width, map_height, lamap)
 
 
         # Attaque
-            else:
-
+        else:
             self.state = "attack"
-
             current_time = pygame.time.get_ticks()
-
             if current_time - self.last_attack > self.attack_cooldown:
-
                 self.create_attack_hitbox(width=50, height=70)
-
                 self.check_attack_collision(player)
-
                 self.last_attack = current_time
-
             else:
                 self.reset_attack()
 
