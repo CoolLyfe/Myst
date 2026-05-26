@@ -35,15 +35,10 @@ class ServerNetwork:
                 room = self.map_data[grid_y][grid_x]
                 room_type = room[0]
                 
-                # Spawn in spawn (1), classic (3) and fight (5) rooms
-                if room_type in [1, 3, 5]:
+                # Spawn in classic (3) and fight (5) rooms, and maybe boss (2)
+                if room_type in [3, 5]:
                     # Random number of monsters based on room type
-                    if room_type == 1:
-                        nb_monsters = random.randint(1, 2)
-                    elif room_type == 3:
-                        nb_monsters = random.randint(2, 4)
-                    else: # type 5
-                        nb_monsters = random.randint(3, 6)
+                    nb_monsters = random.randint(2, 4) if room_type == 3 else random.randint(3, 6)
                     
                     for _ in range(nb_monsters):
                         # Random position inside the room (considering gap)
@@ -63,9 +58,7 @@ class ServerNetwork:
                             "alive": True,
                             "type": "basic",
                             "attack_cooldown": 0,
-                            "attacking": 0,
-                            "attack_windup": 0,
-                            "target_to_hit": None
+                            "attacking": 0
                         }
                         monster_id_counter += 1
 
@@ -281,23 +274,15 @@ class ServerNetwork:
                 # Decrement attacking timer
                 if mstate.get("attacking", 0) > 0:
                     mstate["attacking"] -= 1
-                
-                # Windup logic
-                if mstate.get("attack_windup", 0) > 0:
-                    mstate["attack_windup"] -= 1
-                    if mstate["attack_windup"] == 1: # Land hit on the 8th frame (near end)
-                        target_pid = mstate.get("target_to_hit")
-                        if target_pid and target_pid in self.player_states:
-                            # Re-check distance (allow a bit of leeway as player might have moved)
-                            tpos = self.player_states[target_pid]["pos"]
-                            dx = tpos[0] - mstate["pos"][0]
-                            dy = tpos[1] - mstate["pos"][1]
-                            dist = (dx**2 + dy**2)**0.5
-                            if dist < 110: # Leeway for player movement
-                                for addr, pid in self.clients.items():
-                                    if pid == target_pid:
+                    # Apply damage on the last frame of the attack animation (wind-up completion)
+                    if mstate["attacking"] == 1:
+                        for pid, pstate in self.player_states.items():
+                            if pstate.get("health", 1) <= 0: continue
+                            dist_hit = ((pstate["pos"][0] - mstate["pos"][0])**2 + (pstate["pos"][1] - mstate["pos"][1])**2)**0.5
+                            if dist_hit < 100: # Range for the actual strike
+                                for addr, cid in self.clients.items():
+                                    if cid == pid:
                                         await self.send_to({"type": "hit_player", "damage": 1, "monster_x": mstate["pos"][0], "monster_y": mstate["pos"][1]}, addr)
-                                        break
                 
                 if not self.player_states: continue
                 
@@ -333,8 +318,6 @@ class ServerNetwork:
                         if mstate.get("attack_cooldown", 0) <= 0:
                             mstate["attack_cooldown"] = 40 # 2 seconds cooldown at 20fps
                             mstate["attacking"] = 10 # 0.5s animation duration
-                            mstate["attack_windup"] = 9 # Hit on 9th server frame (~450ms)
-                            mstate["target_to_hit"] = target_pid
                     elif 80 <= dist < 1000: # Only move if player is somewhat close but not on top
                         speed = 3
                         vx = (dx/dist) * speed
