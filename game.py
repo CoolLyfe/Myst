@@ -35,9 +35,34 @@ def game():
     # Attaque gérée par `player.attacking` et `player.create_attack_hitbox()`
 
     # --- Monstre ---
-    monster_size = 150
-    monster = BasicMonster(player_start_x + 300, player_start_y, monster_size)
+    monsters = []
+    # Shadow monster
+    monsters.append(
+        ShadowMonster(
+            player_start_x + 300,
+            player_start_y,
+            150
+        )
+    )
 
+    # Light monster
+    monsters.append(
+        LightMonster(
+            player_start_x - 400,
+            player_start_y + 200,
+            110
+        )
+    )
+
+    # Tank monster
+    monsters.append(
+        TankMonster(
+            player_start_x + 700,
+            player_start_y - 300,
+            200
+        )
+    )
+    
     # --- Camera ---
     def get_camera_offset(player):
         cam_x = player.rect.centerx - SCREEN_W // 2
@@ -145,11 +170,15 @@ def game():
             player_blit_rect = player.image.get_rect(center=(player_screen_x, player_screen_y))
             screen.blit(player.image, player_blit_rect)
 
-        # Affichage monstre
-        monster_screen_x = monster.rect.centerx - cam_x
-        monster_screen_y = monster.rect.centery - cam_y
-        monster_blit_rect = monster.image.get_rect(center=(monster_screen_x, monster_screen_y))
-        screen.blit(monster.image, monster_blit_rect)
+        # Affichage des monstres
+        for monster in monsters:
+            monster_screen_x = monster.rect.centerx - cam_x
+            monster_screen_y = monster.rect.centery - cam_y
+            monster_blit_rect = monster.image.get_rect(
+            center=(monster_screen_x, monster_screen_y)
+            )
+
+            screen.blit(monster.image, monster_blit_rect)
 
         # Affichage brouillard
         fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))
@@ -165,15 +194,22 @@ def game():
             screen.blit(heal_potion_scaled, (SCREEN_W // 40 + i * (heal_potion_scaled.get_width() + 5), SCREEN_H // 35 + heart_scaled.get_height()))
 
         # Collision attaque joueur -> monstre
-        player.check_attack_collision(monster)
+        for  monster in monsters:
+            player.check_attack_collision(monster)
         
         # IA du monstre
-        monster.update_ai(
-            player,
-            MAP_W,
-            MAP_H,
-            lamap
-        )
+        for monster in  monsters:
+            monster.update_ai(
+                player,
+                MAP_W,
+                MAP_H,
+                lamap
+            )
+
+        # Supprime les monstres morts
+        for monster in monsters[:]:
+            if not monster.alive:
+                monsters.remove(monster)
 
         # Debug hitbox
         #player.draw_hitbox(screen, cam_x, cam_y)
