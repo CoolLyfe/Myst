@@ -52,13 +52,29 @@ class ServerNetwork:
                         spawn_x = random.uniform(room_left, room_right)
                         spawn_y = random.uniform(room_top, room_bottom)
                         
+                        mtype = random.choice(["basic", "shadow", "light", "tank"])
+                        if mtype == "basic":
+                            hp, speed, det_range, atk_range, cd_max = 80, 3, 500, 80, 40
+                        elif mtype == "shadow":
+                            hp, speed, det_range, atk_range, cd_max = 150, 2, 400, 90, 30
+                        elif mtype == "light":
+                            hp, speed, det_range, atk_range, cd_max = 50, 5, 700, 70, 14
+                        elif mtype == "tank":
+                            hp, speed, det_range, atk_range, cd_max = 400, 1, 350, 120, 50
+                        
                         self.monster_states[str(monster_id_counter)] = {
                             "pos": [spawn_x, spawn_y],
-                            "health": 80,
+                            "health": hp,
                             "alive": True,
-                            "type": "basic",
+                            "type": mtype,
+                            "speed": speed,
+                            "detection_range": det_range,
+                            "attack_range": atk_range,
+                            "attack_cooldown_max": cd_max,
                             "attack_cooldown": 0,
-                            "attacking": 0
+                            "attacking": 0,
+                            "patrol_timer": 0,
+                            "patrol_dir": "down"
                         }
                         monster_id_counter += 1
 
@@ -245,6 +261,7 @@ class ServerNetwork:
             await asyncio.sleep(1/30) # 30 FPS updates
 
     async def monster_ai_loop(self):
+        import random
         while self.running:
             for mid, mstate in self.monster_states.items():
                 if not mstate["alive"]: continue
@@ -279,7 +296,8 @@ class ServerNetwork:
                         for pid, pstate in self.player_states.items():
                             if pstate.get("health", 1) <= 0: continue
                             dist_hit = ((pstate["pos"][0] - mstate["pos"][0])**2 + (pstate["pos"][1] - mstate["pos"][1])**2)**0.5
-                            if dist_hit < 100: # Range for the actual strike
+                            atk_range = mstate.get("attack_range", 80)
+                            if dist_hit < atk_range + 20: # Range for the actual strike with slight leniency
                                 for addr, cid in self.clients.items():
                                     if cid == pid:
                                         await self.send_to({"type": "hit_player", "damage": 1, "monster_x": mstate["pos"][0], "monster_y": mstate["pos"][1]}, addr)
@@ -308,18 +326,58 @@ class ServerNetwork:
                         min_dist = dist_sq
                         target_pid = pid
                 
-                if target_pid and not is_knocked_back: # Skip AI move if knocked back hard
+                if target_pid and not is_knocked_back:
                     tpos = self.player_states[target_pid]["pos"]
                     dx = tpos[0] - mstate["pos"][0]
                     dy = tpos[1] - mstate["pos"][1]
                     dist = (dx**2 + dy**2)**0.5
                     
-                    if dist < 80: # Attack range
+                    if dist > mstate.get("detection_range", 500):
+                        target_pid = None # Too far, lose aggro
+                
+                if target_pid is None and not is_knocked_back:
+                    # Patrol state
+                    if mstate.get("patrol_timer", 0) <= 0:
+                        mstate["patrol_dir"] = random.choice(["up", "down", "left", "right"])
+                        mstate["patrol_timer"] = 40 # 2 seconds
+                    else:
+                        mstate["patrol_timer"] -= 1
+
+                    speed = mstate.get("speed", 3)
+                    p_dir = mstate.get("patrol_dir", "down")
+                    vx, vy = 0, 0
+                    if p_dir == "up": vy = -speed
+                    elif p_dir == "down": vy = speed
+                    elif p_dir == "left": vx = -speed
+                    elif p_dir == "right": vx = speed
+
+                    new_x = mstate["pos"][0] + vx
+                    new_y = mstate["pos"][1] + vy
+                    
+                    if self.is_walkable(new_x, new_y):
+                        mstate["pos"][0] = new_x
+                        mstate["pos"][1] = new_y
+                    else:
+                        if self.is_walkable(new_x, mstate["pos"][1]):
+                            mstate["pos"][0] = new_x
+                        elif self.is_walkable(mstate["pos"][0], new_y):
+                            mstate["pos"][1] = new_y
+                            
+                    mstate["dir"] = p_dir
+
+                elif target_pid and not is_knocked_back:
+                    tpos = self.player_states[target_pid]["pos"]
+                    dx = tpos[0] - mstate["pos"][0]
+                    dy = tpos[1] - mstate["pos"][1]
+                    dist = (dx**2 + dy**2)**0.5
+                    
+                    atk_range = mstate.get("attack_range", 80)
+                    if dist <= atk_range: # Attack state
                         if mstate.get("attack_cooldown", 0) <= 0:
-                            mstate["attack_cooldown"] = 40 # 2 seconds cooldown at 20fps
+                            mstate["attack_cooldown"] = mstate.get("attack_cooldown_max", 40)
                             mstate["attacking"] = 10 # 0.5s animation duration
-                    elif 80 <= dist < 1000: # Only move if player is somewhat close but not on top
-                        speed = 3
+                    else: # Chase state
+                        speed = mstate.get("speed", 3)
                         vx = (dx/dist) * speed
                         vy = (dy/dist) * speed
                         

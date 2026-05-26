@@ -3,11 +3,11 @@ from entity import Entity
 
 
 class BasicMonster(Entity):
-    def __init__(self, pos_x, pos_y, sprite_size=100):
+    def __init__(self, pos_x, pos_y, sprite_size=150, health=80, attack=12, speed=8):
         super().__init__(
-            health=80,
-            attack=12,
-            speed=8,
+            health=health,
+            attack=attack,
+            speed=speed,
             nb_potions=0,
             image_path="assets/base_monstre.png",
             pos_x=pos_x,
@@ -70,3 +70,15 @@ class BasicMonster(Entity):
             else: self.image = self.sprite_attackD[0]
             self.attack_anim_index = 0
             self.anim_timer = 0
+
+class ShadowMonster(BasicMonster):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(pos_x, pos_y, sprite_size=180, health=150, attack=20, speed=2)
+
+class LightMonster(BasicMonster):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(pos_x, pos_y, sprite_size=135, health=50, attack=8, speed=7)
+
+class TankMonster(BasicMonster):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(pos_x, pos_y, sprite_size=255, health=400, attack=35, speed=1)
