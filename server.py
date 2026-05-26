@@ -17,7 +17,11 @@ class ServerNetwork:
         self.next_player_id = 1
         self.running = False
         self.restarting = False
-
+        self.boss_room = None
+        self.boss_active = False
+        self.boss_spawned = False
+        self.projectiles = []
+        
         print("[SERVER] Generating global map...")
         self.map_data, self.start_data = procedural_gen()
         print(f"[SERVER] Map generated at start {self.start_data}")
@@ -35,6 +39,10 @@ class ServerNetwork:
                 room = self.map_data[grid_y][grid_x]
                 room_type = room[0]
 
+                # Enregistre la position de la salle du Boss
+                if room_type == 2:
+                    self.boss_room = (grid_x, grid_y)
+                
                 # Spawn in classic (3) and fight (5) rooms
                 if room_type in [3, 5]:
                     # Random number of monsters based on room type
@@ -100,6 +108,18 @@ class ServerNetwork:
         # Determine which cell we are in
         grid_x = int(x // 2000)
         grid_y = int(y // 2000)
+        
+        # LOCKDOWN DE LA SALLE DU BOSS
+        if self.boss_active and self.boss_room:
+            bgx, bgy = self.boss_room
+            if grid_x == bgx and grid_y == bgy:
+                cell_size = 2000
+                gap = 400
+                room_left = bgx * cell_size + gap // 2
+                room_right = (bgx + 1) * cell_size - gap // 2
+                room_top = bgy * cell_size + gap // 2
+                room_bottom = (bgy + 1) * cell_size - gap // 2
+                return (room_left <= x <= room_right and room_top <= y <= room_bottom)
 
         if not (0 <= grid_x < 8 and 0 <= grid_y < 5):
             return False
@@ -254,6 +274,8 @@ class ServerNetwork:
                 if self.monster_states[mid]["health"] <= 0:
                     self.monster_states[mid]["alive"] = False
                     print(f"[SERVER] Monster {mid} died")
+                    if self.monster_states[mid].get("type") == "boss":
+                        self.boss_active = False
 
         elif msg_type == "leave":
             pid = self.clients.pop(addr, None)
@@ -287,13 +309,17 @@ class ServerNetwork:
                         "type": mstate.get("type", "shadow"),
                         "dir": mstate.get("dir", "down"),
                         "moving": mstate.get("moving", False),
-                        "attacking": mstate.get("attacking", 0)
+                        "attacking": mstate.get("attacking", 0),
+                        "state": mstate.get("state", "WALK")
                     }
 
                 sync_msg = {
                     "type": "sync",
                     "players": self.player_states,
-                    "monsters": sync_monsters
+                    "monsters": sync_monsters,
+                    "projectiles": [{"x": p["x"], "y": p["y"]} for p in getattr(self, "projectiles", [])],
+                    "boss_active": self.boss_active,
+                    "boss_room": self.boss_room
                 }
                 for addr in self.clients:
                     await self.send_to(sync_msg, addr)
@@ -302,7 +328,56 @@ class ServerNetwork:
 
     async def monster_ai_loop(self):
         import random
+        import math
         while self.running:
+            # --- UPDATE PROJECTILES ---
+            if not hasattr(self, "projectiles"): self.projectiles = []
+            active_projs = []
+            for p in self.projectiles:
+                p["timer"] -= 50
+                if p["timer"] > 0:
+                    p["x"] += p["vx"]
+                    p["y"] += p["vy"]
+                    hit_pid = None
+                    for pid, pstate in self.player_states.items():
+                        if pstate.get("health", 1) <= 0: continue
+                        dist = ((pstate["pos"][0] - p["x"])**2 + (pstate["pos"][1] - p["y"])**2)**0.5
+                        if dist < 40:
+                            hit_pid = pid
+                            break
+                    if hit_pid:
+                        for addr, cid in self.clients.items():
+                            if cid == hit_pid:
+                                asyncio.create_task(self.send_to({"type": "hit_player", "damage": p["damage"], "monster_x": p["x"], "monster_y": p["y"]}, addr))
+                    elif self.is_walkable(p["x"], p["y"]):
+                        active_projs.append(p)
+            self.projectiles = active_projs
+
+            # --- ACTIVATION DU BOSS ---
+            if self.boss_room and not self.boss_spawned:
+                bgx, bgy = self.boss_room
+                for pid, pstate in self.player_states.items():
+                    if pstate.get("health", 1) <= 0: continue
+                    p_gx = int(pstate["pos"][0] // 2000)
+                    p_gy = int(pstate["pos"][1] // 2000)
+                    if p_gx == bgx and p_gy == bgy:
+                        self.boss_active = True
+                        self.boss_spawned = True
+                        spawn_x = bgx * 2000 + 1000
+                        spawn_y = bgy * 2000 + 1000
+                        self.monster_states["boss_1"] = {
+                            "pos": [spawn_x, spawn_y],
+                            "health": 150, "max_health": 150,
+                            "alive": True, "type": "boss",
+                            "speed": 3.0, "state": "WALK",
+                            "cooldown_timer": 800, "action_timer": 0,
+                            "action_queue": [], "in_giga_combo": False,
+                            "force_attack_next": False, "last_action": None,
+                            "move_dir": [0, 0], "attack_cooldown": 0, "attacking": 0
+                        }
+                        print("[SERVER] Boss Activé ! Portes verrouillées.")
+                        break
+
             for mid, mstate in self.monster_states.items():
                 if not mstate["alive"]: continue
 
@@ -346,6 +421,19 @@ class ServerNetwork:
                                         await self.send_to({"type": "hit_player", "damage": 1, "monster_x": mstate["pos"][0], "monster_y": mstate["pos"][1]}, addr)
 
                 if not self.player_states: continue
+                
+                # ================= IA DU BOSS =================
+                if mstate.get("type") == "boss":
+                    from boss import server_update_boss
+                    hits, new_projs = server_update_boss(mstate, self.player_states, self.is_walkable, 50)
+                    if new_projs:
+                        self.projectiles.extend(new_projs)
+                        
+                    for hit in hits:
+                        for addr, cid in self.clients.items():
+                            if cid == hit["pid"]:
+                                await self.send_to({"type": "hit_player", "damage": hit["damage"], "monster_x": hit["x"], "monster_y": hit["y"]}, addr)
+                    continue # Les comportements standards de BasicMonster sont ignorés
 
                 m_grid_x = int(mstate["pos"][0] // 2000)
                 m_grid_y = int(mstate["pos"][1] // 2000)

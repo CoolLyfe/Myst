@@ -13,6 +13,9 @@ class ClientData:
         self.players = {} # Other players: { "id": { "pos": [x,y], "dir": "down", ... } }
         self.monsters = {} # Monsters: { "id": { "pos": [x,y], "alive": True, ... } }
         self.pending_hits = [] # List of hits on the local player
+        self.projectiles = []
+        self.boss_active = False
+        self.boss_room = None
         self.server_restarting = False
         self.local_player_state = {
             "pos": [0, 0],
@@ -41,7 +44,10 @@ class ClientData:
                 "map_data": self.map_data,
                 "start_data": self.start_data,
                 "players": self.players.copy(),
-                "monsters": self.monsters.copy()
+                "monsters": self.monsters.copy(),
+                "projectiles": list(self.projectiles),
+                "boss_active": self.boss_active,
+                "boss_room": self.boss_room
             }
 
 class ClientNetwork:
@@ -126,6 +132,9 @@ class ClientNetwork:
                 my_id = self.data.player_id
                 self.data.players = {k: v for k, v in all_players.items() if k != my_id}
                 self.data.monsters = msg.get("monsters", {})
+                self.data.projectiles = msg.get("projectiles", [])
+                self.data.boss_active = msg.get("boss_active", False)
+                self.data.boss_room = msg.get("boss_room", None)
         elif mtype == "hit_player":
             with self.data.lock:
                 self.data.pending_hits.append(msg)
