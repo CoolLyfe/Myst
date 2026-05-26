@@ -55,15 +55,15 @@ class ServerNetwork:
                         spawn_x = random.uniform(room_left, room_right)
                         spawn_y = random.uniform(room_top, room_bottom)
                         
-                        mtype = random.choice(["basic", "shadow", "light", "tank"])
-                        if mtype == "basic":
-                            hp, speed, det_range, atk_range, cd_max = 80, 3, 500, 80, 40
-                        elif mtype == "shadow":
-                            hp, speed, det_range, atk_range, cd_max = 150, 2, 400, 90, 30
-                        elif mtype == "light":
-                            hp, speed, det_range, atk_range, cd_max = 50, 5, 700, 70, 14
+                        mtype = random.choice(["shadow", "light", "tank"])
+                        if mtype == "shadow":
+                            hp, speed, det_range, atk_range, cd_max = 150, 3, 450, 100, 30
+
+                        elif mtype == "fast":
+                            hp, speed, det_range, atk_range, cd_max = 80, 5, 700, 120, 10
+
                         elif mtype == "tank":
-                            hp, speed, det_range, atk_range, cd_max = 400, 1, 350, 120, 50
+                            hp, speed, det_range, atk_range, cd_max = 400, 1, 400, 150, 50
                         
                         self.monster_states[str(monster_id_counter)] = {
                             "pos": [spawn_x, spawn_y],
