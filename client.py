@@ -103,10 +103,11 @@ class ClientNetwork:
     async def listener(self):
         while self.running:
             try:
-                raw_data, _ = await self.loop.sock_recvfrom(self.sock, 8192)
+                raw_data, _ = await self.loop.sock_recvfrom(self.sock, 65535)
                 msg = json.loads(raw_data.decode())
                 await self.handle_message(msg)
-            except Exception:
+            except Exception as e:
+                # print(f"[CLIENT] Receive error: {e}")
                 await asyncio.sleep(0.01)
 
     async def handle_message(self, msg):

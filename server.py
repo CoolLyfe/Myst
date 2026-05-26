@@ -35,12 +35,10 @@ class ServerNetwork:
                 room = self.map_data[grid_y][grid_x]
                 room_type = room[0]
                 
-                # Spawn in start (1), classic (3) and fight (5) rooms
-                if room_type in [1, 3, 5]:
+                # Spawn in classic (3) and fight (5) rooms
+                if room_type in [3, 5]:
                     # Random number of monsters based on room type
-                    if room_type == 1:
-                        nb_monsters = random.randint(1, 2)
-                    elif room_type == 3:
+                    if room_type == 3:
                         nb_monsters = random.randint(2, 4)
                     else: # type 5
                         nb_monsters = random.randint(3, 6)
@@ -255,10 +253,24 @@ class ServerNetwork:
                 print(f"[SERVER] Player {pid} timed out")
 
             if self.clients:
+                # Optimize monster states for network transfer
+                sync_monsters = {}
+                for mid, mstate in self.monster_states.items():
+                    # Only send essential fields to keep UDP packet size small
+                    sync_monsters[mid] = {
+                        "pos": mstate["pos"],
+                        "health": mstate["health"],
+                        "alive": mstate["alive"],
+                        "type": mstate.get("type", "basic"),
+                        "dir": mstate.get("dir", "down"),
+                        "moving": mstate.get("moving", False),
+                        "attacking": mstate.get("attacking", 0)
+                    }
+
                 sync_msg = {
                     "type": "sync",
                     "players": self.player_states,
-                    "monsters": self.monster_states
+                    "monsters": sync_monsters
                 }
                 for addr in self.clients:
                     await self.send_to(sync_msg, addr)
