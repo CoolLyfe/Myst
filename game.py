@@ -179,6 +179,7 @@ def game():
             )
 
             screen.blit(monster.image, monster_blit_rect)
+            monster.draw_health_bar(screen, cam_x, cam_y)
 
         # Affichage brouillard
         fog_scaled = pygame.transform.scale(fog_image, (SCREEN_W, SCREEN_H))
