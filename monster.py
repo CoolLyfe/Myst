@@ -103,10 +103,9 @@ class Monster(Entity):
 
     # IA principale
     def update_ai(self, player, map_width, map_height, lamap):
-
+        
         distance_x = player.rect.centerx - self.rect.centerx
         distance_y = player.rect.centery - self.rect.centery
-
         distance = math.sqrt(distance_x**2 + distance_y**2)
 
         # Patrol
@@ -156,15 +155,30 @@ class Monster(Entity):
             dx = distance_x * self.speed
             dy = distance_y * self.speed
             self.move(dx, dy, map_width, map_height, lamap)
-
+            
+            # Direction du monstre
+            if abs(distance_x) > abs(distance_y):
+                if distance_x > 0:
+                    self.direction = "right"
+                else:
+                    self.direction = "left"
+            else:
+                if distance_y > 0:
+                    self.direction = "down"
+                else:
+                    self.direction = "up"
 
         # Attaque
         else:
             self.state = "attack"
             current_time = pygame.time.get_ticks()
             if current_time - self.last_attack > self.attack_cooldown:
+
                 self.create_attack_hitbox(width=50, height=70)
                 self.check_attack_collision(player)
+              
+                # Reset direct apres l'attaque
+                self.reset_attack()
                 self.last_attack = current_time
             else:
                 self.reset_attack()
