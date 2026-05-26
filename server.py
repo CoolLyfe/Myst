@@ -35,10 +35,15 @@ class ServerNetwork:
                 room = self.map_data[grid_y][grid_x]
                 room_type = room[0]
                 
-                # Spawn in classic (3) and fight (5) rooms, and maybe boss (2)
-                if room_type in [3, 5]:
+                # Spawn in start (1), classic (3) and fight (5) rooms
+                if room_type in [1, 3, 5]:
                     # Random number of monsters based on room type
-                    nb_monsters = random.randint(2, 4) if room_type == 3 else random.randint(3, 6)
+                    if room_type == 1:
+                        nb_monsters = random.randint(1, 2)
+                    elif room_type == 3:
+                        nb_monsters = random.randint(2, 4)
+                    else: # type 5
+                        nb_monsters = random.randint(3, 6)
                     
                     for _ in range(nb_monsters):
                         # Random position inside the room (considering gap)
