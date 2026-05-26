@@ -44,30 +44,42 @@ class ServerNetwork:
                         nb_monsters = random.randint(3, 6)
 
                     for _ in range(nb_monsters):
-                        # Random position inside the room (considering gap)
-                        cell_size = 2000
-                        gap = 400
-                        room_left = grid_x * cell_size + gap // 2 + 100
-                        room_right = (grid_x + 1) * cell_size - gap // 2 - 100
-                        room_top = grid_y * cell_size + gap // 2 + 100
-                        room_bottom = (grid_y + 1) * cell_size - gap // 2 - 100
-
-                        spawn_x = random.uniform(room_left, room_right)
-                        spawn_y = random.uniform(room_top, room_bottom)
-
                         mtype = random.choice(["basic", "shadow", "light", "tank"])
                         if mtype == "basic":
                             hp, speed, det_range, atk_range, cd_max = 80, 3, 500, 80, 40
-                            hw, hh = 55 // 2, 75 // 2
+                            hw, hh = 40, 45
                         elif mtype == "shadow":
                             hp, speed, det_range, atk_range, cd_max = 150, 2, 400, 90, 30
-                            hw, hh = 99 // 2, 135 // 2
+                            hw, hh = 65, 75
                         elif mtype == "light":
                             hp, speed, det_range, atk_range, cd_max = 50, 5, 700, 70, 14
-                            hw, hh = 74 // 2, 101 // 2
+                            hw, hh = 50, 60
                         elif mtype == "tank":
                             hp, speed, det_range, atk_range, cd_max = 400, 1, 350, 120, 50
-                            hw, hh = 140 // 2, 191 // 2
+                            hw, hh = 80, 80
+                        
+                        # Find a valid spawn position inside the room
+                        cell_size = 2000
+                        gap = 400
+                        wall_thick = 120
+                        # Margin includes wall thickness + monster hitbox + safety buffer
+                        margin_x = wall_thick + hw + 20
+                        margin_y = wall_thick + hh + 20
+                        
+                        room_left = grid_x * cell_size + gap // 2 + margin_x
+                        room_right = (grid_x + 1) * cell_size - gap // 2 - margin_x
+                        room_top = grid_y * cell_size + gap // 2 + margin_y
+                        room_bottom = (grid_y + 1) * cell_size - gap // 2 - margin_y
+                        
+                        spawn_x = random.uniform(room_left, room_right)
+                        spawn_y = random.uniform(room_top, room_bottom)
+                        
+                        # Verify position is actually walkable with hitbox
+                        attempts = 0
+                        while not self.is_pos_walkable_with_hitbox(spawn_x, spawn_y, hw, hh) and attempts < 10:
+                            spawn_x = random.uniform(room_left, room_right)
+                            spawn_y = random.uniform(room_top, room_bottom)
+                            attempts += 1
                         
                         self.monster_states[str(monster_id_counter)] = {
                             "pos": [spawn_x, spawn_y],

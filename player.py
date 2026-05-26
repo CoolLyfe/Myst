@@ -13,8 +13,8 @@ class Player(Entity):
             pos_x=pos_x,
             pos_y=pos_y,
             sprite_size=sprite_size,
-            hitbox_width=int(sprite_size * 0.55),
-            hitbox_height=int(sprite_size * 0.75),
+            hitbox_width=int(sprite_size * 0.7),
+            hitbox_height=int(sprite_size * 0.8),
         )
         self.size = sprite_size
         self.sprite_standing = []
