@@ -445,7 +445,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
                 # Update monster direction based on movement if server provides it
                 m.direction = mdata.get("dir", "down")
-                m.update_animation(delta_ms, False, mdata.get("attacking", 0) > 0)
+                m.update_animation(delta_ms, mdata.get("moving", False), mdata.get("attacking", 0) > 0)
 
                 m_screen_x = m.rect.centerx - cam_x
                 m_screen_y = m.rect.centery - cam_y

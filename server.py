@@ -357,11 +357,15 @@ class ServerNetwork:
                     if self.is_walkable(new_x, new_y):
                         mstate["pos"][0] = new_x
                         mstate["pos"][1] = new_y
+                        mstate["moving"] = True
                     else:
+                        mstate["moving"] = False
                         if self.is_walkable(new_x, mstate["pos"][1]):
                             mstate["pos"][0] = new_x
+                            mstate["moving"] = True
                         elif self.is_walkable(mstate["pos"][0], new_y):
                             mstate["pos"][1] = new_y
+                            mstate["moving"] = True
                             
                     mstate["dir"] = p_dir
 
@@ -388,13 +392,17 @@ class ServerNetwork:
                         if self.is_walkable(new_x, new_y):
                             mstate["pos"][0] = new_x
                             mstate["pos"][1] = new_y
+                            mstate["moving"] = True
                         else:
+                            mstate["moving"] = False
                             # Try sliding along X
                             if self.is_walkable(new_x, mstate["pos"][1]):
                                 mstate["pos"][0] = new_x
+                                mstate["moving"] = True
                             # Try sliding along Y
                             elif self.is_walkable(mstate["pos"][0], new_y):
                                 mstate["pos"][1] = new_y
+                                mstate["moving"] = True
 
                         # Update direction for animation
                         if abs(dx) > abs(dy):

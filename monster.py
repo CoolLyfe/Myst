@@ -21,8 +21,12 @@ class BasicMonster(Entity):
         self.sprite_attackR = []
         self.sprite_attackD = []
         
-        # Mapping for filenames (to handle the different naming conventions)
-        # Note: some files have "-removebg-preview" suffix
+        self.sprite_walkU = []
+        self.sprite_walkL = []
+        self.sprite_walkR = []
+        self.sprite_walkD = []
+        
+        # Attack sprites (5 frames)
         for i in range(1, 6):
             # Up
             img = pygame.image.load(f"assets/monstre/monstre_Uattack_{i}.png").convert_alpha()
@@ -37,12 +41,24 @@ class BasicMonster(Entity):
             img = pygame.image.load(f"assets/monstre/monstre_Dattack_{i}-removebg-preview.png").convert_alpha()
             self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
 
+        # Walk sprites (4 frames)
+        for i in range(1, 5):
+            img = pygame.image.load(f"assets/monstre/monstre_Uwalk_{i}.png").convert_alpha()
+            self.sprite_walkU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load(f"assets/monstre/monstre_Lwalk_{i}.png").convert_alpha()
+            self.sprite_walkL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load(f"assets/monstre/monstre_Rwalk_{i}.png").convert_alpha()
+            self.sprite_walkR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load(f"assets/monstre/monstre_Dwalk_{i}.png").convert_alpha()
+            self.sprite_walkD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
         # Setup base image from sprites
-        self.image = self.sprite_attackD[0]
+        self.image = self.sprite_walkD[0]
         
         self.anim_timer = 0
         self.anim_rate = 100 # 10fps for attack
         self.attack_anim_index = 0
+        self.walk_anim_index = 0
         
     def update_animation(self, dt_ms, is_moving, is_attacking):
         self.attacking = is_attacking
@@ -62,13 +78,30 @@ class BasicMonster(Entity):
             
             if 0 <= self.attack_anim_index < len(frames):
                 self.image = frames[self.attack_anim_index]
-        else:
-            # Use first frame of attack as "directional idle/walk"
-            if self.direction == 'up': self.image = self.sprite_attackU[0]
-            elif self.direction == 'left': self.image = self.sprite_attackL[0]
-            elif self.direction == 'right': self.image = self.sprite_attackR[0]
-            else: self.image = self.sprite_attackD[0]
+        elif is_moving:
+            if self.direction == 'up': frames = self.sprite_walkU
+            elif self.direction == 'left': frames = self.sprite_walkL
+            elif self.direction == 'right': frames = self.sprite_walkR
+            else: frames = self.sprite_walkD
+            
+            self.anim_timer += dt_ms
+            if self.anim_timer >= self.anim_rate:
+                self.anim_timer = 0
+                self.walk_anim_index += 1
+                if self.walk_anim_index >= len(frames):
+                    self.walk_anim_index = 0
+            
+            if 0 <= self.walk_anim_index < len(frames):
+                self.image = frames[self.walk_anim_index]
             self.attack_anim_index = 0
+        else:
+            # Idle
+            if self.direction == 'up': self.image = self.sprite_walkU[0]
+            elif self.direction == 'left': self.image = self.sprite_walkL[0]
+            elif self.direction == 'right': self.image = self.sprite_walkR[0]
+            else: self.image = self.sprite_walkD[0]
+            self.attack_anim_index = 0
+            self.walk_anim_index = 0
             self.anim_timer = 0
 
 class ShadowMonster(BasicMonster):
