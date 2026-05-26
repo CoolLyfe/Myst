@@ -247,26 +247,57 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
                 # Contrôles joueur local
                 keys = pygame.key.get_pressed()
+                dx = dy = 0
+                speedcross = int(player.speed * 0.7071)
                 moved = False
 
                 if player.alive or is_free_cam:
-                    # Determine target direction
-                    target_dx = 0
-                    target_dy = 0
-                    if keys[pygame.K_z] or keys[pygame.K_UP]: target_dy -= 1
-                    if keys[pygame.K_s] or keys[pygame.K_DOWN]: target_dy += 1
-                    if keys[pygame.K_q] or keys[pygame.K_LEFT]: target_dx -= 1
-                    if keys[pygame.K_d] or keys[pygame.K_RIGHT]: target_dx += 1
-                    
-                    if not player.attacking and (target_dx != 0 or target_dy != 0):
-                        # Use diagonal speed if moving on both axes
-                        speed = player.speed
-                        if target_dx != 0 and target_dy != 0:
-                            speed = int(speed * 0.7071)
-                        
-                        dx = target_dx * speed
-                        dy = target_dy * speed
-                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap)
+                    if not player.attacking and (keys[pygame.K_z] or keys[pygame.K_UP]):
+                        if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                            dx -= speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dx += speedcross
+                            dy -= speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dy += speedcross
+                        elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                            dx += speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dx -= speedcross
+                            dy -= speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dy += speedcross
+                        else :
+                            dy -= player.speed
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dy += player.speed
+                    elif not player.attacking and (keys[pygame.K_s] or keys[pygame.K_DOWN]):
+                        if not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                            dx -= speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dx += speedcross
+                            dy += speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dy -= speedcross
+                        elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                            dx += speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dx -= speedcross
+                            dy += speedcross
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dy -= speedcross
+                        else :
+                            dy += player.speed
+                            moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                            dy -= player.speed
+                    elif not player.attacking and (keys[pygame.K_q] or keys[pygame.K_LEFT]):
+                        dx -= player.speed
+                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                        dx += player.speed
+                    elif not player.attacking and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+                        dx += player.speed
+                        moved = player.move(dx, dy, MAP_W, MAP_H, lamap, map_data=map_data)
+                        dx -= player.speed
 
                     running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
                     player.set_running(running)
@@ -311,7 +342,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             # Apply smooth knockback locally
             if getattr(player, 'kb_vx', 0) != 0 or getattr(player, 'kb_vy', 0) != 0:
                 old_dir = player.direction
-                player.move(player.kb_vx, player.kb_vy, lamap.get_width(), lamap.get_height(), lamap)
+                player.move(player.kb_vx, player.kb_vy, MAP_W, MAP_H, lamap, map_data=map_data)
                 player.direction = old_dir
                 player.kb_vx *= 0.8
                 player.kb_vy *= 0.8
