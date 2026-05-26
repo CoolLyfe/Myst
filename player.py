@@ -202,15 +202,32 @@ class Player(Entity):
         self.image = frames[self.anim_index]
 
     def move(self, dx, dy, map_width, map_height, lamap):
-        # Calcul de la nouvelle position proposee
-        new_x = self.rect.centerx + dx
-        new_y = self.rect.centery + dy
-
-        # Bordures de la map ( limitation ecran )
-        half = self.size // 2
-        clamped_x = max(half, min(new_x, map_width - half))
-        clamped_y = max(half, min(new_y, map_height - half))
-
+        # On tente de bouger sur chaque axe separement pour permettre de glisser contre les murs
+        moved = False
+        
+        # Test axe X
+        if dx != 0:
+            new_x = self.rect.centerx + dx
+            half = self.size // 2
+            clamped_x = max(half, min(new_x, map_width - half))
+            
+            test_rect = self.rect.copy()
+            test_rect.centerx = clamped_x
+            if self.is_position_walkable(test_rect, lamap):
+                self.rect.centerx = clamped_x
+                moved = True
+            
+        # Test axe Y
+        if dy != 0:
+            new_y = self.rect.centery + dy
+            half = self.size // 2
+            clamped_y = max(half, min(new_y, map_height - half))
+            
+            test_rect = self.rect.copy()
+            test_rect.centery = clamped_y
+            if self.is_position_walkable(test_rect, lamap):
+                self.rect.centery = clamped_y
+                moved = True
 
         if dx > 0:
             self.direction = "right"
@@ -222,29 +239,31 @@ class Player(Entity):
         elif dy < 0:
             self.direction = "up"
 
-        # Test de collision transparence ( si map_surface fournie )
-        if lamap is not None:
-            test_rect = self.rect.copy()
-            test_rect.center = (clamped_x, clamped_y)
-
-            if not self.is_position_walkable(test_rect, lamap):
-                return False
-
-        self.rect.center = (clamped_x, clamped_y)
         self.update_hitbox()
-        # Deplacement du joueur + limite aux bords de la map + collision
-        return True
+        return moved
 
     def is_position_walkable(self, rect, map_surface):
+        # On utilise une zone plus petite au niveau des pieds pour les collisions
+        # Cela permet d'avoir un effet de profondeur (le haut du corps peut depasser sur les murs)
+        collision_w = int(self.size * 0.45)
+        collision_h = int(self.size * 0.25)
+        
+        c_rect = pygame.Rect(0, 0, collision_w, collision_h)
+        c_rect.centerx = rect.centerx
+        c_rect.bottom = rect.bottom - int(self.size * 0.05)
+        
         pts = [
-            rect.center,
-            (rect.left, rect.top),
-            (rect.right - 1, rect.top),
-            (rect.left, rect.bottom - 1),
-            (rect.right - 1, rect.bottom - 1),
+            c_rect.center,
+            c_rect.topleft,
+            c_rect.topright,
+            c_rect.bottomleft,
+            c_rect.bottomright,
+            (c_rect.left, c_rect.centery),
+            (c_rect.right - 1, c_rect.centery),
+            (c_rect.centerx, c_rect.top),
+            (c_rect.centerx, c_rect.bottom - 1)
         ]
 
-        # Check l'alpha de la map sous le joueur ( alpha = 0 => transparent => pas walkable )
         w, h = map_surface.get_size()
         for (px, py) in pts:
             ix = int(px)

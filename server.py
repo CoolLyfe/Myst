@@ -427,6 +427,46 @@ class ServerNetwork:
                         else:
                             mstate["dir"] = "down" if dy > 0 else "up"
             
+            # Simple monster-monster and monster-player separation
+            mids = list(self.monster_states.keys())
+            for i in range(len(mids)):
+                m1 = self.monster_states[mids[i]]
+                if not m1["alive"]: continue
+                
+                # Monster-Monster separation
+                for j in range(i + 1, len(mids)):
+                    m2 = self.monster_states[mids[j]]
+                    if not m2["alive"]: continue
+                    
+                    dx = m1["pos"][0] - m2["pos"][0]
+                    dy = m1["pos"][1] - m2["pos"][1]
+                    dist_sq = dx**2 + dy**2
+                    min_dist = 70 # Separation distance
+                    if dist_sq < min_dist**2 and dist_sq > 0:
+                        dist = dist_sq**0.5
+                        push = (min_dist - dist) / dist * 0.2
+                        # Push them apart if the new positions are walkable
+                        nx1, ny1 = m1["pos"][0] + dx * push, m1["pos"][1] + dy * push
+                        nx2, ny2 = m2["pos"][0] - dx * push, m2["pos"][1] - dy * push
+                        if self.is_walkable(nx1, ny1):
+                            m1["pos"][0], m1["pos"][1] = nx1, ny1
+                        if self.is_walkable(nx2, ny2):
+                            m2["pos"][0], m2["pos"][1] = nx2, ny2
+
+                # Monster-Player separation (monsters are pushed back by players)
+                for pid, pstate in self.player_states.items():
+                    if pstate.get("health", 1) <= 0: continue
+                    dx = m1["pos"][0] - pstate["pos"][0]
+                    dy = m1["pos"][1] - pstate["pos"][1]
+                    dist_sq = dx**2 + dy**2
+                    min_p_dist = 60
+                    if dist_sq < min_p_dist**2 and dist_sq > 0:
+                        dist = dist_sq**0.5
+                        push = (min_p_dist - dist) / dist * 0.4
+                        nx, ny = m1["pos"][0] + dx * push, m1["pos"][1] + dy * push
+                        if self.is_walkable(nx, ny):
+                            m1["pos"][0], m1["pos"][1] = nx, ny
+
             await asyncio.sleep(1/20)
 
     async def send_to(self, msg, addr):
