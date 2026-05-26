@@ -42,6 +42,7 @@ class Entity(pygame.sprite.Sprite):
         self.attacking = False
         self.direction = "down"
         self.alive = True
+        self.invincible = False
         # Setup de la hitbox d'attaque + direction de l'entite
 
     def update_hitbox(self):
@@ -71,10 +72,20 @@ class Entity(pygame.sprite.Sprite):
 
     def take_damage(self, damage):
         self.health -= damage
+        print(f"{self} took {damage} damage")
+        print(f"HP restant : {self.health}")
         if self.health <= 0:
             self.health = 0
             self.alive = False
-        # Gere la perte de pv + la mort
+            print(f"{self} est mort")
+    # Gere la perte de pv + la mort
+
+    def apply_knockback(self, force_x, force_y):
+        self.rect.x += force_x
+        self.rect.y += force_y
+        self.update_hitbox()
+    # Du knockback il vas partir en enfer le monstre
+    
 
     def create_attack_hitbox(self, width=60, height=60):
         if self.direction == "right":
@@ -121,6 +132,32 @@ class Entity(pygame.sprite.Sprite):
         self.attack_hitbox = pygame.Rect(0, 0, 0, 0)
         # Reset la hitbox d'attaque apres utilisation
 
+    def draw_health_bar(self, screen, cam_x=0, cam_y=0):
+        bar_width = 60
+        bar_height = 8
+        ratio = self.health / self.max_health
+        pygame.draw.rect(
+            screen,
+            (255, 0, 0),
+            (
+                self.rect.x - cam_x,
+                self.rect.y - 20 - cam_y,
+                bar_width,
+                bar_height
+            )
+        )
+        pygame.draw.rect(
+            screen,
+            (0, 255, 0),
+            (
+                self.rect.x - cam_x,
+                self.rect.y - 20 - cam_y,
+                bar_width * ratio,
+                bar_height
+            )
+        )
+    # La vie du monstre koi
+    
     def draw_hitbox(self, screen, cam_x=0, cam_y=0):
         debug_rect = pygame.Rect(
             self.hitbox.x - cam_x,
