@@ -2,7 +2,7 @@ import pygame
 import sys
 from procedural_gen import procedural_gen, create_map_image
 from player import Player
-from monster import BasicMonster
+from monster import ShadowMonster, LightMonster, TankMonster
 
 
 def game():
@@ -166,6 +166,14 @@ def game():
 
         # Collision attaque joueur -> monstre
         player.check_attack_collision(monster)
+        
+        # IA du monstre
+        monster.update_ai(
+            player,
+            MAP_W,
+            MAP_H,
+            lamap
+        )
 
         # Debug hitbox
         #player.draw_hitbox(screen, cam_x, cam_y)
