@@ -22,7 +22,7 @@ NOIR = (0, 0, 0)
 BLANC = (255, 255, 255)
 ROUGE = (200, 50, 50)
 
-title_font = pygame.font.SysFont("Chiller", 1500, bold=True, italic=True)
+title_font = pygame.font.SysFont("Chiller", 2000, bold=True)
 button_font = pygame.font.SysFont("Chiller", 50)
 
 # Button layout constants
@@ -60,7 +60,7 @@ def draw_menu():
     video.draw(screen, (0, 0))
 
     title_surf = title_font.render("Myst", True, BLANC)
-    title_scaled = pygame.transform.scale(title_surf, (LARGEUR // 3, HAUTEUR // 5))
+    title_scaled = pygame.transform.scale(title_surf, (LARGEUR // 2, HAUTEUR // 4))
     screen.blit(title_scaled, (LARGEUR // 2 - title_scaled.get_width() // 2, HAUTEUR // 4 - title_scaled.get_height() // 2))
 
     current_time = time.time()
