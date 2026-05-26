@@ -57,7 +57,8 @@ class ServerNetwork:
                             "health": 80,
                             "alive": True,
                             "type": "basic",
-                            "attack_cooldown": 0
+                            "attack_cooldown": 0,
+                            "attacking": 0
                         }
                         monster_id_counter += 1
 
@@ -270,6 +271,10 @@ class ServerNetwork:
                 if mstate.get("attack_cooldown", 0) > 0:
                     mstate["attack_cooldown"] -= 1
                 
+                # Decrement attacking timer
+                if mstate.get("attacking", 0) > 0:
+                    mstate["attacking"] -= 1
+                
                 if not self.player_states: continue
                 
                 m_grid_x = int(mstate["pos"][0] // 2000)
@@ -303,6 +308,7 @@ class ServerNetwork:
                     if dist < 80: # Attack range
                         if mstate.get("attack_cooldown", 0) <= 0:
                             mstate["attack_cooldown"] = 40 # 2 seconds cooldown at 20fps
+                            mstate["attacking"] = 10 # 0.5s animation duration
                             # Find the target player's address to send the hit message
                             for addr, pid in self.clients.items():
                                 if pid == target_pid:
