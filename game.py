@@ -263,7 +263,9 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     dash_displacement = player.speed * player.dash_speed_multiplier
                     dx_dash = player.dash_direction_vector.x * dash_displacement
                     dy_dash = player.dash_direction_vector.y * dash_displacement
-                    moved = player.move(dx_dash, dy_dash, MAP_W, MAP_H, lamap)
+                    moved_x = player.move(dx_dash, 0, MAP_W, MAP_H, lamap, map_data=map_data)
+                    moved_y = player.move(0, dy_dash, MAP_W, MAP_H, lamap, map_data=map_data)
+                    moved = moved_x or moved_y
                     player.stop_footsteps()
                 
                 if (player.alive or is_free_cam) and not player.dashing:

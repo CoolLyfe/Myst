@@ -5,7 +5,7 @@ from entity import Entity
 class Player(Entity):
     def __init__(self, pos_x, pos_y, sprite_size):
         super().__init__(
-            health=3,
+            health=10,
             attack=10,
             speed=10,
             nb_potions=2,
@@ -146,7 +146,7 @@ class Player(Entity):
             self.footstep_channel.stop()
             self.footstep_channel = None
 
-    def create_attack_hitbox(self, width=60, height=60):
+    def create_attack_hitbox(self, width=70, height=70):
         super().create_attack_hitbox(width=width, height=height)
         self.attack_anim_index = 0
         self.attack_anim_timer = 0
