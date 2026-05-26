@@ -3,6 +3,43 @@ from entity import Entity
 
 
 class BasicMonster(Entity):
+    # Cache sprites by size to prevent massive lag when spawning multiple monsters
+    # Structure: { size: { 'attackU': [], ... 'walkD': [] } }
+    _global_sprite_cache = {}
+
+    @classmethod
+    def get_sprites(cls, sprite_size):
+        if sprite_size not in cls._global_sprite_cache:
+            cache = {
+                'attackU': [], 'attackL': [], 'attackR': [], 'attackD': [],
+                'walkU': [], 'walkL': [], 'walkR': [], 'walkD': []
+            }
+            # Attack sprites (5 frames)
+            for i in range(1, 6):
+                img = pygame.image.load(f"assets/monstre/monstre_Uattack_{i}.png").convert_alpha()
+                cache['attackU'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+                img = pygame.image.load(f"assets/monstre/monstre_Lattack_{i}.png").convert_alpha()
+                cache['attackL'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+                img = pygame.image.load(f"assets/monstre/monstre_Rattack_{i}.png").convert_alpha()
+                cache['attackR'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+                img = pygame.image.load(f"assets/monstre/monstre_Dattack_{i}-removebg-preview.png").convert_alpha()
+                cache['attackD'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+
+            # Walk sprites (4 frames)
+            for i in range(1, 5):
+                img = pygame.image.load(f"assets/monstre/monstre_Uwalk_{i}.png").convert_alpha()
+                cache['walkU'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+                img = pygame.image.load(f"assets/monstre/monstre_Lwalk_{i}.png").convert_alpha()
+                cache['walkL'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+                img = pygame.image.load(f"assets/monstre/monstre_Rwalk_{i}.png").convert_alpha()
+                cache['walkR'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+                img = pygame.image.load(f"assets/monstre/monstre_Dwalk_{i}.png").convert_alpha()
+                cache['walkD'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            
+            cls._global_sprite_cache[sprite_size] = cache
+        
+        return cls._global_sprite_cache[sprite_size]
+
     def __init__(self, pos_x, pos_y, sprite_size=150, health=80, attack=12, speed=8):
         super().__init__(
             health=health,
@@ -16,41 +53,16 @@ class BasicMonster(Entity):
             hitbox_width=int(sprite_size * 0.55),
             hitbox_height=int(sprite_size * 0.75)
         )
-        self.sprite_attackU = []
-        self.sprite_attackL = []
-        self.sprite_attackR = []
-        self.sprite_attackD = []
         
-        self.sprite_walkU = []
-        self.sprite_walkL = []
-        self.sprite_walkR = []
-        self.sprite_walkD = []
-        
-        # Attack sprites (5 frames)
-        for i in range(1, 6):
-            # Up
-            img = pygame.image.load(f"assets/monstre/monstre_Uattack_{i}.png").convert_alpha()
-            self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            # Left
-            img = pygame.image.load(f"assets/monstre/monstre_Lattack_{i}.png").convert_alpha()
-            self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            # Right
-            img = pygame.image.load(f"assets/monstre/monstre_Rattack_{i}.png").convert_alpha()
-            self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            # Down (has removebg suffix)
-            img = pygame.image.load(f"assets/monstre/monstre_Dattack_{i}-removebg-preview.png").convert_alpha()
-            self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-
-        # Walk sprites (4 frames)
-        for i in range(1, 5):
-            img = pygame.image.load(f"assets/monstre/monstre_Uwalk_{i}.png").convert_alpha()
-            self.sprite_walkU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load(f"assets/monstre/monstre_Lwalk_{i}.png").convert_alpha()
-            self.sprite_walkL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load(f"assets/monstre/monstre_Rwalk_{i}.png").convert_alpha()
-            self.sprite_walkR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load(f"assets/monstre/monstre_Dwalk_{i}.png").convert_alpha()
-            self.sprite_walkD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        sprites = self.get_sprites(sprite_size)
+        self.sprite_attackU = sprites['attackU']
+        self.sprite_attackL = sprites['attackL']
+        self.sprite_attackR = sprites['attackR']
+        self.sprite_attackD = sprites['attackD']
+        self.sprite_walkU = sprites['walkU']
+        self.sprite_walkL = sprites['walkL']
+        self.sprite_walkR = sprites['walkR']
+        self.sprite_walkD = sprites['walkD']
 
         # Setup base image from sprites
         self.image = self.sprite_walkD[0]
