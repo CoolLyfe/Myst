@@ -23,6 +23,12 @@ After installation is complete, start the game using the launcher:
 ./Myst
 ```
 
+### 3. Uninstallation
+To remove the virtual environment and the launcher:
+```bash
+./uninstall.sh
+```
+
 ---
 
 ## 🛠️ Requirements & Dependencies
