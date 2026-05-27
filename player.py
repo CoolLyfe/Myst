@@ -122,7 +122,7 @@ class Player(Entity):
         self.dashing = False
         self.dash_timer = 0
         self.dash_duration = 180  # ms
-        self.dash_speed_multiplier = 3.5
+        self.dash_speed_multiplier = 2.5
         self.dash_cooldown = 0
         self.dash_cooldown_duration = 800  # ms
         self.dash_invincibility_duration = 200  # ms
@@ -146,7 +146,7 @@ class Player(Entity):
             self.footstep_channel.stop()
             self.footstep_channel = None
 
-    def create_attack_hitbox(self, width=70, height=70):
+    def create_attack_hitbox(self, width=75, height=75):
         super().create_attack_hitbox(width=width, height=height)
         self.attack_anim_index = 0
         self.attack_anim_timer = 0

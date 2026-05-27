@@ -176,11 +176,10 @@ def main():
                         else:
                             # Show "Searching..." feedback?
                             error_msg = "Searching for room..."
-                            error_timer = time.time() + 10 # Temporary message
+                            error_timer = time.time() + 1
                             draw_menu() # Force update
                             
                             res = game.game(is_host=False, room_name=input_text)
-                            # For clients, keep trying to discover the room if it's a retry
                             retry_count = 0
                             while res == "retry" or (res is False and retry_count < 10):
                                 time.sleep(1.0)

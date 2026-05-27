@@ -1,8 +1,6 @@
 import pygame
 import math
 import random
-import os
-import re
 from enum import Enum, auto
 from entity import Entity
 
@@ -18,69 +16,6 @@ class BossState(Enum):
 # CLASSE CLIENT (Rendu et Animations)
 # ==========================================
 class Boss(Entity):
-    _sprite_cache = {}
-
-    @classmethod
-    def get_sprites(cls, sprite_size):
-        if sprite_size in cls._sprite_cache:
-            return cls._sprite_cache[sprite_size]
-
-        cache = {}
-        states = ["WALK", "DASH", "SHOOT", "REST", "HEAL", "TELEPORT"]
-        
-        for state in states:
-            cache[state] = []
-            
-        # Mots-clés (en minuscules pour une recherche flexible)
-        keywords = {
-            "WALK": ["stand", "walk"],
-            "DASH": ["dashd", "dash"],
-            "SHOOT": ["shoot", "attack"],
-            "REST": ["stand", "rest"],
-            "HEAL": ["heal"],
-            "TELEPORT": ["tp", "teleport"]
-        }
-
-        boss_dir = "assets/boss"
-        if os.path.exists(boss_dir):
-            # On liste tous les fichiers PNG du dossier
-            files = [f for f in os.listdir(boss_dir) if f.lower().endswith(".png")]
-            
-            # Fonction pour extraire le numéro de la frame pour le tri (ex: boss_tp_4 -> 4)
-            def get_frame_num(filename):
-                nums = re.findall(r'\d+', filename)
-                return int(nums[-1]) if nums else 0
-                
-            files.sort(key=get_frame_num)
-
-            for state in states:
-                kw_list = keywords[state]
-                for f in files:
-                    f_lower = f.lower()
-                    # On cherche si l'un des mots-clés est dans le nom du fichier
-                    if any(kw in f_lower for kw in kw_list):
-                        try:
-                            path = os.path.join(boss_dir, f)
-                            img = pygame.image.load(path).convert_alpha()
-                            cache[state].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-                        except:
-                            pass
-
-        # Fallback si rien n'a été trouvé pour éviter un crash
-        for state in states:
-            if not cache[state]:
-                surf = pygame.Surface((sprite_size, sprite_size), pygame.SRCALPHA)
-                if state == "WALK": surf.fill((100, 100, 100))
-                elif state == "DASH": surf.fill((255, 100, 0))
-                elif state == "SHOOT": surf.fill((255, 0, 0))
-                elif state == "REST": surf.fill((50, 50, 200))
-                elif state == "HEAL": surf.fill((0, 255, 0))
-                elif state == "TELEPORT": surf.fill((200, 0, 255))
-                cache[state].append(surf)
-
-        cls._sprite_cache[sprite_size] = cache
-        return cache
-
     def __init__(self, pos_x, pos_y, sprite_size=200):
         super().__init__(
             health=150, attack=1, speed=5, nb_potions=0,
@@ -88,15 +23,108 @@ class Boss(Entity):
             pos_x=pos_x, pos_y=pos_y, sprite_size=sprite_size
         )
         
-        # --- VISUEL TEMPORAIRE ---
-        self.image = pygame.Surface((sprite_size, sprite_size))
-        self.image.fill((200, 20, 20))
-        self.sprites = self.get_sprites(sprite_size)
+        self.sprite_walk = []
+        self.sprite_dashU = []
+        self.sprite_dashD = []
+        self.sprite_dashL = []
+        self.sprite_dashR = []
+        self.sprite_shoot = []
+        self.sprite_heal = []
+        self.sprite_tp = []
+
+        # WALK / STAND
+        try:
+            img = pygame.image.load("assets/boss/boss_stand_1.png").convert_alpha()
+            self.sprite_walk.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_stand_2.png").convert_alpha()
+            self.sprite_walk.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_stand_3.png").convert_alpha()
+            self.sprite_walk.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        except Exception: pass
+
+        # DASH D
+        try:
+            img = pygame.image.load("assets/boss/boss_dashD_1.png").convert_alpha()
+            self.sprite_dashD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_dashD_2.png").convert_alpha()
+            self.sprite_dashD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_dashD_3.png").convert_alpha()
+            self.sprite_dashD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        except Exception: pass
+
+        # DASH U
+        try:
+            img = pygame.image.load("assets/boss/boss_dashU_1.png").convert_alpha()
+            self.sprite_dashU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_dashU_2.png").convert_alpha()
+            self.sprite_dashU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_dashU_3.png").convert_alpha()
+            self.sprite_dashU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        except Exception: pass
+
+        # DASH L
+        try:
+            img = pygame.image.load("assets/boss/boss_dashL_1.png").convert_alpha()
+            self.sprite_dashL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_dashL_2.png").convert_alpha()
+            self.sprite_dashL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_dashL_3.png").convert_alpha()
+            self.sprite_dashL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        except Exception: pass
+
+        # DASH R
+        try:
+            img = pygame.image.load("assets/boss/boss_dashR_1.png").convert_alpha()
+            self.sprite_dashR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_dashR_2.png").convert_alpha()
+            self.sprite_dashR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_dashR_3.png").convert_alpha()
+            self.sprite_dashR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        except Exception: pass
+
+        # HEAL
+        try:
+            img = pygame.image.load("assets/boss/boss_heal_1.png").convert_alpha()
+            self.sprite_heal.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_heal_2.png").convert_alpha()
+            self.sprite_heal.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_heal_3.png").convert_alpha()
+            self.sprite_heal.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        except Exception: pass
+
+        # TP
+        try:
+            img = pygame.image.load("assets/boss/boss_tp_1.png").convert_alpha()
+            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_tp_2.png").convert_alpha()
+            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_tp_3.png").convert_alpha()
+            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_tp_4.png").convert_alpha()
+            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_tp_5.png").convert_alpha()
+            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        except Exception: pass
+
+        # SHOOT
+        try:
+            img = pygame.image.load("assets/boss/boss_shoot_1.png").convert_alpha()
+            self.sprite_shoot.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_shoot_2.png").convert_alpha()
+            self.sprite_shoot.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+            img = pygame.image.load("assets/boss/boss_shoot_3.png").convert_alpha()
+            self.sprite_shoot.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        except Exception: pass
+
+        if len(self.sprite_walk) > 0:
+            self.image = self.sprite_walk[0]
+        else:
+            self.image = pygame.Surface((sprite_size, sprite_size), pygame.SRCALPHA)
+            self.image.fill((200, 20, 20))
+            
         self.state = "WALK"
-        self.image = self.sprites[self.state][0]
+        self.last_state = "WALK"
         
-        # État pour d'éventuelles animations
-        self.state = BossState.WALK
         # Variables d'animation
         self.anim_timer = 0
         self.anim_rate = 100 # Vitesse de l'animation en ms (10 fps)
@@ -108,11 +136,28 @@ class Boss(Entity):
         # Ajoute ici la logique de défilement des sprites quand tu en auras.
         
         current_state = getattr(self, 'state', 'WALK')
-        # Si l'état n'existe pas dans le cache, on retombe sur WALK
-        if current_state not in self.sprites:
-            current_state = "WALK"
+        
+        if current_state in ("WALK", "REST"):
+            frames = self.sprite_walk
+        elif current_state == "DASH":
+            if getattr(self, 'direction', 'down') == "up": frames = self.sprite_dashU
+            elif self.direction == "left": frames = self.sprite_dashL
+            elif self.direction == "right": frames = self.sprite_dashR
+            else: frames = self.sprite_dashD
+        elif current_state == "SHOOT":
+            frames = self.sprite_shoot
+        elif current_state == "HEAL":
+            frames = self.sprite_heal
+        elif current_state == "TELEPORT":
+            frames = self.sprite_tp
+        else:
+            frames = self.sprite_walk
             
-        frames = self.sprites[current_state]
+        if current_state != self.last_state:
+            self.anim_index = 0
+            self.anim_timer = 0
+            self.last_state = current_state
+            
         if not frames:
             return
             
@@ -259,8 +304,14 @@ def _server_boss_start_action(mstate, action, target_pos, new_projectiles, is_wa
         snap_angle = (round(8 * angle / (2 * math.pi)) % 8) * (math.pi / 4)
         mstate["move_dir"] = [math.cos(snap_angle), math.sin(snap_angle)]
         mstate["action_timer"] = random.randint(1000, 1500)
-        mstate["dash_speed"] = 80.0
+        mstate["dash_speed"] = 40.0
         mstate["attacking"] = 10
+        
+        # Mise à jour de la direction du Boss
+        if abs(dx) > abs(dy):
+            mstate["dir"] = "right" if dx > 0 else "left"
+        else:
+            mstate["dir"] = "down" if dy > 0 else "up"
         
     elif action == "SHOOT":
         mstate["action_timer"] = 400
@@ -270,6 +321,12 @@ def _server_boss_start_action(mstate, action, target_pos, new_projectiles, is_wa
         angle = math.atan2(dy, dx)
         snap_angle = (round(8 * angle / (2 * math.pi)) % 8) * (math.pi / 4)
         mstate["move_dir"] = [math.cos(snap_angle), math.sin(snap_angle)]
+        
+        # Mise à jour de la direction du Boss
+        if abs(dx) > abs(dy):
+            mstate["dir"] = "right" if dx > 0 else "left"
+        else:
+            mstate["dir"] = "down" if dy > 0 else "up"
         
         speed = 20.0
         for angle_offset in [-0.6, -0.3, 0, 0.3, 0.6]:
@@ -311,7 +368,7 @@ def _server_boss_start_action(mstate, action, target_pos, new_projectiles, is_wa
 
 def _server_boss_dash(mstate, player_states, is_walkable_fn, dt_ms, hits):
     mstate["action_timer"] -= dt_ms
-    dash_spd = mstate.get("dash_speed", 80.0)
+    dash_spd = mstate.get("dash_speed", 40.0)
     new_x = mstate["pos"][0] + mstate["move_dir"][0] * dash_spd
     new_y = mstate["pos"][1] + mstate["move_dir"][1] * dash_spd
     
