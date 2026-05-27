@@ -34,22 +34,28 @@ python3 -m pip install --upgrade pip --quiet > /dev/null 2>&1
 # Install base requirements (this might fail for ffpyplayer, which we fix next)
 python3 -m pip install -r game/requirements.txt --quiet > /dev/null 2>&1
 
-# Exact "Expert Fix" command sequence that worked in my terminal
+# Exact "Expert Fix" command sequence
 if ! python3 -c "import ffpyplayer" > /dev/null 2>&1; then
     echo -e "${BLUE}[3/4] Video support not found. Applying explicit fix...${NC}"
     
+    # 1. Install build-time dependencies in the venv first
+    echo -e "${BLUE}Installing build tools (Cython, wheel)...${NC}"
+    pip install Cython wheel setuptools --quiet
+
     if [ -f /etc/arch-release ]; then
-        echo -e "${BLUE}Running Arch-specific system install...${NC}"
+        echo -e "${BLUE}Ensuring Arch system dependencies are present...${NC}"
         sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf > /dev/null 2>&1
         
-        # --- THE EXACT COMMANDS ---
+        # --- THE EXACT COMMANDS & FLAGS ---
         export CPATH="/usr/include/ffmpeg4.4:$CPATH"
         export LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LIBRARY_PATH"
+        export LDFLAGS="-L/usr/lib/ffmpeg4.4 $LDFLAGS"
         export PKG_CONFIG_PATH="/usr/lib/ffmpeg4.4/pkgconfig:$PKG_CONFIG_PATH"
-        export CFLAGS="-Wno-error=incompatible-pointer-types"
+        export CFLAGS="-O3 -Wno-error=incompatible-pointer-types"
         
-        echo -e "${BLUE}Building ffpyplayer with custom flags...${NC}"
-        pip install ffpyplayer
+        echo -e "${BLUE}Building ffpyplayer (this will take a moment)...${NC}"
+        # --no-build-isolation is critical so pip uses our exported flags and installed Cython
+        pip install ffpyplayer --no-build-isolation
         # --------------------------
         
     elif [ -f /etc/debian_version ]; then
