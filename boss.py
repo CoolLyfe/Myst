@@ -24,7 +24,7 @@ class Boss(Entity):
             pos_x=pos_x, pos_y=pos_y, sprite_size=sprite_size
         )
         
-        # Utilitaire intelligent pour charger les séquences d'images facilement
+        
         def load_frames(action_name, max_frames):
             frames = []
             for i in range(1, max_frames + 1):
@@ -35,7 +35,6 @@ class Boss(Entity):
                     pass
             return frames
 
-        # Groupement de toutes les animations dans un dictionnaire pour éviter les "if/elif" à répétition
         self.animations = {
             "WALK": load_frames("stand", 3),
             "DASH_D": load_frames("dashD", 3),
@@ -51,7 +50,6 @@ class Boss(Entity):
         if not self.animations["SPAWN"]:
             self.animations["SPAWN"] = self.animations["WALK"]
 
-        # Chargement sécurisé des sons
         self.sound_map = {}
         sound_files = {
             "DASH": "boss_dash.mp3",

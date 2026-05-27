@@ -85,7 +85,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     # Fenêtre adaptée à la taille de la map
     MAP_W, MAP_H = map_surface_pil.size
     SCREEN_W, SCREEN_H = 1920, 1080
-    screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.RESIZABLE)
     pygame.display.set_caption("Myst Multiplayer")
 
     background = pygame.image.load("assets/background_jsp.png").convert()
