@@ -43,19 +43,24 @@ if python3 -c "import ffpyplayer" &> /dev/null; then
 else
     echo -e "${BLUE}ffpyplayer not found. Attempting to install system dependencies...${NC}"
     if [ -f /etc/arch-release ]; then
-        echo -e "${BLUE}Running: sudo pacman -S --needed --noconfirm ffmpeg sdl2 python-ffpyplayer pkgconf${NC}"
-        sudo pacman -S --needed --noconfirm ffmpeg sdl2 python-ffpyplayer pkgconf
+        echo -e "${BLUE}Running: sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf${NC}"
+        sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf
+        
+        # Arch specific: ffpyplayer needs the legacy ffmpeg 4.4 paths
+        export CPATH="/usr/include/ffmpeg4.4:$CPATH"
+        export LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LIBRARY_PATH"
     elif [ -f /etc/debian_version ]; then
         echo -e "${BLUE}Running: sudo apt-get update && sudo apt-get install -y libavfilter-dev ...${NC}"
         sudo apt-get update && sudo apt-get install -y libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev
     fi
 
-    # Try pip install one last time (in case system install wasn't possible or enough)
+    # Try pip install one last time
     if ! python3 -c "import ffpyplayer" &> /dev/null; then
         echo -e "${BLUE}Attempting to install ffpyplayer via pip...${NC}"
         if ! pip install ffpyplayer; then
             echo -e "${RED}Error: Failed to install ffpyplayer.${NC}"
-            echo -e "Video support is MANDATORY. Please check the logs above and ensure FFmpeg headers are installed."
+            echo -e "Compilation failed. This is likely because your Python version ($(python3 --version)) is too new for ffpyplayer."
+            echo -e "Please try using Python 3.12 or 3.13 if possible."
             exit 1
         fi
     fi
