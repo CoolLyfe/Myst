@@ -44,7 +44,7 @@ if ! python3 -c "import ffpyplayer" > /dev/null 2>&1; then
 
     if [ -f /etc/arch-release ]; then
         echo -e "${BLUE}Ensuring Arch system dependencies are present...${NC}"
-        sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf > /dev/null 2>&1
+        sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf libmediainfo > /dev/null 2>&1
         
         # --- THE EXACT COMMANDS & FLAGS ---
         export CPATH="/usr/include/ffmpeg4.4:$CPATH"
@@ -82,6 +82,12 @@ cat << 'EOF' > Myst
 # Myst Launcher
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$SCRIPT_DIR"
+
+# Arch specific: force legacy ffmpeg 4.4 at runtime to prevent undefined symbol errors
+if [ -d "/usr/lib/ffmpeg4.4" ]; then
+    export LD_LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LD_LIBRARY_PATH"
+fi
+
 source .venv/bin/activate
 cd game
 python3 menu.py
