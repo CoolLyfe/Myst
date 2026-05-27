@@ -103,9 +103,11 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     player.drink_potion_sfx.set_volume(vol_sfx)
     player.footstep_sfx.set_volume(vol_sfx)
 
-    remote_players  = {}
-    synced_monsters = {}
+    remote_players       = {}
+    synced_monsters      = {}
     _morts_comptabilises = set()  # évite de compter deux fois le meme kill
+    _drops_ramasses      = set()  # évite de ramasser deux fois la meme potion
+    _coffres_ouverts     = set()  # évite d'ouvrir deux fois le meme coffre
 
     # Images des coffres
     try:
@@ -394,17 +396,21 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 # Ramassage automatique des potions au sol (rayon 60px)
                 if player.alive:
                     for drop_id, drop in list(drops_potion.items()):
+                        if drop_id in _drops_ramasses:
+                            continue
                         dist = ((player.rect.centerx - drop["x"])**2 + (player.rect.centery - drop["y"])**2)**0.5
                         if dist < 60:
+                            _drops_ramasses.add(drop_id)
                             network.ramasser_potion(drop_id)
                             player.nb_potions += drop.get("soin", 1)
 
                 # Ouverture de coffre avec la touche F au contact
                 if player.alive and keys[pygame.K_f]:
                     for cid, coffre in coffres_data.items():
-                        if coffre["etat"] == "ferme":
+                        if coffre["etat"] == "ferme" and cid not in _coffres_ouverts:
                             dist = ((player.rect.centerx - coffre["x"])**2 + (player.rect.centery - coffre["y"])**2)**0.5
                             if dist < 80:
+                                _coffres_ouverts.add(cid)
                                 network.ouvrir_coffre(cid)
 
             else:
