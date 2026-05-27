@@ -19,8 +19,10 @@ fi
 echo -e "${GREEN}[1/4] Python 3 detected.${NC}"
 
 # 2. Create Virtual Environment
-echo -e "${BLUE}[2/4] Creating virtual environment...${NC}"
-python3 -m venv .venv
+echo -e "${BLUE}[2/4] Creating virtual environment (with system site packages)...${NC}"
+# We use --system-site-packages so that if you have ffpyplayer installed via pacman,
+# the virtual environment can use it instead of trying to compile it.
+python3 -m venv --system-site-packages .venv
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to create virtual environment. You might need to install python3-venv.${NC}"
     exit 1
@@ -35,17 +37,21 @@ pip install --upgrade pip
 pip install pygame Pillow pymediainfo
 
 # ffpyplayer often fails on Linux if FFmpeg headers aren't present.
-# We try to install it, and if it fails, we warn but continue.
-echo -e "${BLUE}Attempting to install ffpyplayer (for video support)...${NC}"
-if ! pip install ffpyplayer; then
-    echo -e "${RED}Warning: Failed to install ffpyplayer.${NC}"
-    echo -e "Video support will be disabled, but the game will still run."
-    echo -e "To enable video, you must install system FFmpeg headers:"
-    
-    if [ -f /etc/arch-release ]; then
-        echo -e "On Arch Linux, run: ${BLUE}sudo pacman -S ffmpeg sdl2 pkgconf${NC}"
-    else
-        echo -e "On Ubuntu/Debian, run: ${BLUE}sudo apt-get install libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev${NC}"
+# We first check if it's already available (e.g. from system site packages)
+if python3 -c "import ffpyplayer" &> /dev/null; then
+    echo -e "${GREEN}ffpyplayer already available.${NC}"
+else
+    echo -e "${BLUE}Attempting to install ffpyplayer (for video support)...${NC}"
+    if ! pip install ffpyplayer; then
+        echo -e "${RED}Warning: Failed to install ffpyplayer.${NC}"
+        echo -e "Video support will be disabled, but the game will still run."
+        echo -e "To enable video, you must install system FFmpeg headers:"
+        
+        if [ -f /etc/arch-release ]; then
+            echo -e "On Arch Linux, run: ${BLUE}sudo pacman -S ffmpeg sdl2 python-ffpyplayer pkgconf${NC}"
+        else
+            echo -e "On Ubuntu/Debian, run: ${BLUE}sudo apt-get install libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev${NC}"
+        fi
     fi
 fi
 
