@@ -52,7 +52,7 @@ def quitgame():
     pygame.quit()
     sys.exit()
 
-video = pyvidplayer.Video("assets/fire_background.mp4")
+video = pyvidplayer.Video("assets/video/fire_background.mp4")
 video.set_size((1920, 1080))
 LARGEUR, HAUTEUR = 1920, 1080
 screen = pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)

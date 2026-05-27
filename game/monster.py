@@ -14,19 +14,19 @@ def _load_sprites(dossier, prefixe, directions, nb_attack, nb_walk, sprite_size)
     for d in directions:
         for i in range(1, nb_attack + 1):
             try:
-                img = pygame.image.load(f"assets/{dossier}/{prefixe}_Attack_{d}_{i}.png").convert_alpha()
+                img = pygame.image.load(f"assets/monsters/{dossier}/{prefixe}_Attack_{d}_{i}.png").convert_alpha()
                 cache[f'attack{d}'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
             except: pass
         for i in range(1, nb_walk + 1):
             try:
-                img = pygame.image.load(f"assets/{dossier}/{prefixe}_Walk_{d}_{i}.png").convert_alpha()
+                img = pygame.image.load(f"assets/monsters/{dossier}/{prefixe}_Walk_{d}_{i}.png").convert_alpha()
                 cache[f'walk{d}'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
             except: pass
     return cache
 
 
 class BasicMonster(Entity):
-    """Monstre de base — sprites dans assets/monstre/"""
+    """Monstre de base — sprites dans assets/monsters/shadow/"""
     _sprite_cache = {}
 
     @classmethod
@@ -41,18 +41,18 @@ class BasicMonster(Entity):
         for i in range(1, 6):
             for d, key in [('U', 'attackU'), ('L', 'attackL'), ('R', 'attackR')]:
                 try:
-                    img = pygame.image.load(f"assets/monstre/monstre_{d}attack_{i}.png").convert_alpha()
+                    img = pygame.image.load(f"assets/monsters/shadow/monstre_{d}attack_{i}.png").convert_alpha()
                     cache[key].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
                 except: pass
             try:
-                img = pygame.image.load(f"assets/monstre/monstre_Dattack_{i}-removebg-preview.png").convert_alpha()
+                img = pygame.image.load(f"assets/monsters/shadow/monstre_Dattack_{i}-removebg-preview.png").convert_alpha()
                 cache['attackD'].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
             except: pass
 
         for i in range(1, 5):
             for d, key in [('U', 'walkU'), ('L', 'walkL'), ('R', 'walkR'), ('D', 'walkD')]:
                 try:
-                    img = pygame.image.load(f"assets/monstre/monstre_{d}walk_{i}.png").convert_alpha()
+                    img = pygame.image.load(f"assets/monsters/shadow/monstre_{d}walk_{i}.png").convert_alpha()
                     cache[key].append(pygame.transform.scale(img, (sprite_size, sprite_size)))
                 except: pass
 
@@ -66,7 +66,7 @@ class BasicMonster(Entity):
     def __init__(self, pos_x, pos_y, sprite_size=100, health=80, attack=12, speed=8):
         super().__init__(
             health=health, attack=attack, speed=speed, nb_potions=0,
-            image_path="assets/base_monstre.png",
+            image_path="assets/monsters/base_monstre.png",
             pos_x=pos_x, pos_y=pos_y, sprite_size=sprite_size,
             hitbox_width=int(sprite_size * 0.55),
             hitbox_height=int(sprite_size * 0.75)
@@ -141,7 +141,7 @@ class DirectionalMonster(BasicMonster):
 
 
 class ShadowMonster(BasicMonster):
-    """Monstre lent et résistant — sprites dans assets/monstre/"""
+    """Monstre lent et résistant — sprites dans assets/monsters/shadow/"""
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, sprite_size=180, health=150, attack=20, speed=2)
         self.xp_reward = 55
@@ -149,18 +149,18 @@ class ShadowMonster(BasicMonster):
 
 
 class LightMonster(DirectionalMonster):
-    """Monstre rapide et fragile — sprites dans assets/small_monster/"""
+    """Monstre rapide et fragile — sprites dans assets/monsters/light/"""
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, sprite_size=135, health=50, attack=8, speed=7)
         self.xp_reward = 18
         self.luck      = 0.8
-        self.init_sprites_custom("small_monster", "Small", nb_attack=3, nb_walk=4, sprite_size=135)
+        self.init_sprites_custom("light", "Small", nb_attack=3, nb_walk=4, sprite_size=135)
 
 
 class TankMonster(DirectionalMonster):
-    """Monstre lent avec énorme PV — sprites dans assets/tank_monster/"""
+    """Monstre lent avec énorme PV — sprites dans assets/monsters/tank/"""
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, sprite_size=255, health=400, attack=35, speed=1)
         self.xp_reward = 120
         self.luck      = 2.0
-        self.init_sprites_custom("tank_monster", "Tank", nb_attack=3, nb_walk=4, sprite_size=255)
+        self.init_sprites_custom("tank", "Tank", nb_attack=3, nb_walk=4, sprite_size=255)

@@ -84,12 +84,12 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H), pygame.FULLSCREEN)
     pygame.display.set_caption("Myst Multiplayer")
 
-    background        = pygame.image.load("assets/background_jsp.png").convert()
+    background        = pygame.image.load("assets/ui/background_jsp.png").convert()
     lamap             = pygame.image.fromstring(map_surface_pil.tobytes(), map_surface_pil.size, map_surface_pil.mode).convert_alpha()
     background        = pygame.transform.scale(background, (SCREEN_W, SCREEN_H))
-    fog_image         = pygame.image.load("assets/fog_of_war.png").convert_alpha()
-    heart_image       = pygame.image.load("assets/heart.png").convert_alpha()
-    heal_potion_image = pygame.image.load("assets/heal_potion.png").convert_alpha()
+    fog_image         = pygame.image.load("assets/map/fog_of_war.png").convert_alpha()
+    heart_image       = pygame.image.load("assets/ui/heart.png").convert_alpha()
+    heal_potion_image = pygame.image.load("assets/ui/heal_potion.png").convert_alpha()
 
     player_size    = 120
     player_start_x = start_data[0] * cell_size + cell_size // 2

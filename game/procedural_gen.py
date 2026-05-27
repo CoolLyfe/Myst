@@ -50,13 +50,13 @@ def create_map_image(map, cell_size=2500):
     draw = ImageDraw.Draw(image)
     
     room_images = {
-        1: Image.open("assets/grassy_map.png"), #spawn room
-        2: Image.open("assets/snowy_map.png"), #boss room
-        3: Image.open("assets/base_map_good.png"), #classic room
-        4: Image.open("assets/loot_room.png"), #loot room
-        5: Image.open("assets/fight_room.png"), #fight room
+        1: Image.open("assets/map/grassy_map.png"), #spawn room
+        2: Image.open("assets/map/snowy_map.png"), #boss room
+        3: Image.open("assets/map/base_map_good.png"), #classic room
+        4: Image.open("assets/map/loot_room.png"), #loot room
+        5: Image.open("assets/map/fight_room.png"), #fight room
         }
-    couloir_image = Image.open("assets/couloir.png").convert("RGBA")
+    couloir_image = Image.open("assets/map/couloir.png").convert("RGBA")
 
     # en vrai il faudrai rajouter une salle "shop" ou salle "pnj encounter" (pour rencontrer 'igrek koi tegal')
     #reponse de louis.l : ntm trop dure on vera
@@ -114,5 +114,5 @@ def create_map_image(map, cell_size=2500):
                     image.paste(couloir, (paste_x, paste_y), couloir)
     
 
-    image.save('assets/map_game.png')
+    image.save('assets/map/map_game.png')
     return image

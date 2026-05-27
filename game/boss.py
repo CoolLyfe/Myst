@@ -20,7 +20,7 @@ class Boss(Entity):
     def __init__(self, pos_x, pos_y, sprite_size=200):
         super().__init__(
             health=1000, attack=2, speed=5, nb_potions=0,
-            image_path="assets/base_monstre.png", 
+            image_path="assets/monsters/base_monstre.png", 
             pos_x=pos_x, pos_y=pos_y, sprite_size=sprite_size
         )
         
