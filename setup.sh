@@ -31,30 +31,31 @@ echo -e "${BLUE}[3/4] Installing dependencies...${NC}"
 source .venv/bin/activate
 python3 -m pip install --upgrade pip --quiet > /dev/null 2>&1
 
-# Use the requirements file in the game folder
+# Install base requirements (this might fail for ffpyplayer, which we fix next)
 python3 -m pip install -r game/requirements.txt --quiet > /dev/null 2>&1
 
-# ffpyplayer check and automated fix
-if python3 -c "import ffpyplayer" > /dev/null 2>&1; then
-    echo -e "${GREEN}[3/4] Dependencies installed (ffpyplayer ready).${NC}"
-else
-    echo -e "${BLUE}[3/4] Video support not found. Attempting automated fix...${NC}"
+# Exact "Expert Fix" command sequence that worked in my terminal
+if ! python3 -c "import ffpyplayer" > /dev/null 2>&1; then
+    echo -e "${BLUE}[3/4] Video support not found. Applying explicit fix...${NC}"
     
     if [ -f /etc/arch-release ]; then
+        echo -e "${BLUE}Running Arch-specific system install...${NC}"
         sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf > /dev/null 2>&1
-        # Expert Fix for Arch Linux + Python 3.14:
+        
+        # --- THE EXACT COMMANDS ---
         export CPATH="/usr/include/ffmpeg4.4:$CPATH"
         export LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LIBRARY_PATH"
         export PKG_CONFIG_PATH="/usr/lib/ffmpeg4.4/pkgconfig:$PKG_CONFIG_PATH"
         export CFLAGS="-Wno-error=incompatible-pointer-types"
+        
+        echo -e "${BLUE}Building ffpyplayer with custom flags...${NC}"
+        pip install ffpyplayer
+        # --------------------------
+        
     elif [ -f /etc/debian_version ]; then
         sudo apt-get update > /dev/null 2>&1
         sudo apt-get install -y libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev > /dev/null 2>&1
-    fi
-
-    # Try pip install one last time silently
-    if ! python3 -c "import ffpyplayer" > /dev/null 2>&1; then
-        python3 -m pip install ffpyplayer --quiet > /dev/null 2>&1
+        pip install ffpyplayer
     fi
 
     # Final validation
@@ -62,9 +63,10 @@ else
         echo -e "${GREEN}[3/4] Dependencies installed (ffpyplayer ready).${NC}"
     else
         echo -e "${RED}Error: Failed to install mandatory video support (ffpyplayer).${NC}"
-        echo -e "Your system environment may be incompatible with this library."
         exit 1
     fi
+else
+    echo -e "${GREEN}[3/4] Dependencies installed (ffpyplayer ready).${NC}"
 fi
 
 # 4. Create Launcher Script
