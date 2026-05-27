@@ -255,6 +255,8 @@ class ServerNetwork:
             mid = str(msg.get("monster_id"))
             dmg = msg.get("damage", 10)
             if mid in self.monster_states:
+                if self.monster_states[mid].get("state") == "SPAWN":
+                    return # Immunisé pendant son apparition
                 self.monster_states[mid]["health"] -= dmg
 
                 # Apply knockback
@@ -367,10 +369,10 @@ class ServerNetwork:
                         spawn_y = bgy * 2000 + 1000
                         self.monster_states["boss_1"] = {
                             "pos": [spawn_x, spawn_y],
-                            "health": 150, "max_health": 150,
+                            "health": 1, "max_health": 150,
                             "alive": True, "type": "boss",
-                            "speed": 3.0, "state": "WALK",
-                            "cooldown_timer": 800, "action_timer": 0,
+                            "speed": 3.0, "state": "SPAWN",
+                            "cooldown_timer": 800, "action_timer": 10000,
                             "action_queue": [], "in_giga_combo": False,
                             "force_attack_next": False, "last_action": None,
                             "move_dir": [0, 0], "attack_cooldown": 0, "attacking": 0,

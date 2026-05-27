@@ -247,6 +247,14 @@ click_feedback_timer = 0
 transition_alpha   = 255   # pour les fondus
 prev_state         = None
 
+def play_menu_music():
+    try:
+        pygame.mixer.music.load("assets/sound/music_menu.mp3")
+        pygame.mixer.music.set_volume(0.15)  # Volume faible pour l'ambiance du menu
+        pygame.mixer.music.play(-1)          # -1 pour jouer en boucle
+    except Exception as e:
+        print(f"[MENU] Erreur lors du chargement de la musique : {e}")
+
 def draw_menu():
     global error_msg, error_timer, click_feedback_btn, click_feedback_timer
 
@@ -310,6 +318,9 @@ def main():
     clock = pygame.time.Clock()
     global menu_state, input_text, error_msg, error_timer, click_feedback_btn, click_feedback_timer
 
+    # Lancement de la musique au démarrage du menu
+    play_menu_music()
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -333,6 +344,7 @@ def main():
                                     time.sleep(0.5)
                                     res = game.game(is_host=True, is_solo=True)
                                 pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
+                                play_menu_music()  # Relance la musique en revenant du jeu
                             elif btn["label"] == "En ligne":
                                 menu_state = "online"
                             elif btn["label"] == "Quitter":
@@ -396,6 +408,7 @@ def main():
 
                         if success:
                             pygame.display.set_mode((LARGEUR, HAUTEUR), pygame.FULLSCREEN)
+                            play_menu_music()  # Relance la musique en revenant du mode multijoueur
 
                 elif event.key == pygame.K_BACKSPACE:
                     input_text = input_text[:-1]

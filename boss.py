@@ -11,6 +11,7 @@ class BossState(Enum):
     REST = auto()       # Repos : Courte pause statique
     HEAL = auto()       # Soin : Régénération si HP < 50%
     TELEPORT = auto()   # Déplacement instantané près du joueur
+    SPAWN = auto()      # Apparition : Canalisation 10s au centre
 
 # ==========================================
 # CLASSE CLIENT (Rendu et Animations)
@@ -23,101 +24,52 @@ class Boss(Entity):
             pos_x=pos_x, pos_y=pos_y, sprite_size=sprite_size
         )
         
-        self.sprite_walk = []
-        self.sprite_dashU = []
-        self.sprite_dashD = []
-        self.sprite_dashL = []
-        self.sprite_dashR = []
-        self.sprite_shoot = []
-        self.sprite_heal = []
-        self.sprite_tp = []
+        # Utilitaire intelligent pour charger les séquences d'images facilement
+        def load_frames(action_name, max_frames):
+            frames = []
+            for i in range(1, max_frames + 1):
+                try:
+                    img = pygame.image.load(f"assets/boss/boss_{action_name}_{i}.png").convert_alpha()
+                    frames.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+                except Exception:
+                    pass
+            return frames
 
-        # WALK / STAND
-        try:
-            img = pygame.image.load("assets/boss/boss_stand_1.png").convert_alpha()
-            self.sprite_walk.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_stand_2.png").convert_alpha()
-            self.sprite_walk.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_stand_3.png").convert_alpha()
-            self.sprite_walk.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        except Exception: pass
+        # Groupement de toutes les animations dans un dictionnaire pour éviter les "if/elif" à répétition
+        self.animations = {
+            "WALK": load_frames("stand", 3),
+            "DASH_D": load_frames("dashD", 3),
+            "DASH_U": load_frames("dashU", 3),
+            "DASH_L": load_frames("dashL", 3),
+            "DASH_R": load_frames("dashR", 3),
+            "SHOOT": load_frames("shoot", 3),
+            "HEAL": load_frames("heal", 3),
+            "TELEPORT": load_frames("tp", 5),
+            "SPAWN": load_frames("spawn", 2)
+        }
+        self.animations["REST"] = self.animations["WALK"]
+        if not self.animations["SPAWN"]:
+            self.animations["SPAWN"] = self.animations["WALK"]
 
-        # DASH D
-        try:
-            img = pygame.image.load("assets/boss/boss_dashD_1.png").convert_alpha()
-            self.sprite_dashD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_dashD_2.png").convert_alpha()
-            self.sprite_dashD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_dashD_3.png").convert_alpha()
-            self.sprite_dashD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        except Exception: pass
+        # Chargement sécurisé des sons
+        self.sound_map = {}
+        sound_files = {
+            "DASH": "boss_dash.mp3",
+            "HEAL": "boss_heal.mp3",
+            "TELEPORT": "boss_tp.mp3",
+            "SHOOT": "boss_shoot.mp3"
+        }
+        
+        for state, filename in sound_files.items():
+            try:
+                snd = pygame.mixer.Sound(f"assets/sound/{filename}")
+                snd.set_volume(0.5)
+                self.sound_map[state] = snd
+            except Exception as e:
+                print(f"[BOSS] Impossible de charger le son {filename} : {e}")
 
-        # DASH U
-        try:
-            img = pygame.image.load("assets/boss/boss_dashU_1.png").convert_alpha()
-            self.sprite_dashU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_dashU_2.png").convert_alpha()
-            self.sprite_dashU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_dashU_3.png").convert_alpha()
-            self.sprite_dashU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        except Exception: pass
-
-        # DASH L
-        try:
-            img = pygame.image.load("assets/boss/boss_dashL_1.png").convert_alpha()
-            self.sprite_dashL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_dashL_2.png").convert_alpha()
-            self.sprite_dashL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_dashL_3.png").convert_alpha()
-            self.sprite_dashL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        except Exception: pass
-
-        # DASH R
-        try:
-            img = pygame.image.load("assets/boss/boss_dashR_1.png").convert_alpha()
-            self.sprite_dashR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_dashR_2.png").convert_alpha()
-            self.sprite_dashR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_dashR_3.png").convert_alpha()
-            self.sprite_dashR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        except Exception: pass
-
-        # HEAL
-        try:
-            img = pygame.image.load("assets/boss/boss_heal_1.png").convert_alpha()
-            self.sprite_heal.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_heal_2.png").convert_alpha()
-            self.sprite_heal.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_heal_3.png").convert_alpha()
-            self.sprite_heal.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        except Exception: pass
-
-        # TP
-        try:
-            img = pygame.image.load("assets/boss/boss_tp_1.png").convert_alpha()
-            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_tp_2.png").convert_alpha()
-            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_tp_3.png").convert_alpha()
-            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_tp_4.png").convert_alpha()
-            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_tp_5.png").convert_alpha()
-            self.sprite_tp.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        except Exception: pass
-
-        # SHOOT
-        try:
-            img = pygame.image.load("assets/boss/boss_shoot_1.png").convert_alpha()
-            self.sprite_shoot.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_shoot_2.png").convert_alpha()
-            self.sprite_shoot.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-            img = pygame.image.load("assets/boss/boss_shoot_3.png").convert_alpha()
-            self.sprite_shoot.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        except Exception: pass
-
-        if len(self.sprite_walk) > 0:
-            self.image = self.sprite_walk[0]
+        if len(self.animations["WALK"]) > 0:
+            self.image = self.animations["WALK"][0]
         else:
             self.image = pygame.Surface((sprite_size, sprite_size), pygame.SRCALPHA)
             self.image.fill((200, 20, 20))
@@ -133,30 +85,27 @@ class Boss(Entity):
     def update_animation(self, dt_ms, is_moving, is_attacking):
         """Met à jour l'animation du boss pour le client (appelé par game.py)."""
         self.attacking = is_attacking
-        # Ajoute ici la logique de défilement des sprites quand tu en auras.
         
         current_state = getattr(self, 'state', 'WALK')
         
-        if current_state in ("WALK", "REST"):
-            frames = self.sprite_walk
-        elif current_state == "DASH":
-            if getattr(self, 'direction', 'down') == "up": frames = self.sprite_dashU
-            elif self.direction == "left": frames = self.sprite_dashL
-            elif self.direction == "right": frames = self.sprite_dashR
-            else: frames = self.sprite_dashD
-        elif current_state == "SHOOT":
-            frames = self.sprite_shoot
-        elif current_state == "HEAL":
-            frames = self.sprite_heal
-        elif current_state == "TELEPORT":
-            frames = self.sprite_tp
-        else:
-            frames = self.sprite_walk
+        # Résolution dynamique pour les directions du DASH
+        if current_state == "DASH":
+            dir_char = getattr(self, 'direction', 'down')[0].upper() # ex: 'up' -> 'U'
+            current_state = f"DASH_{dir_char}"
+
+        frames = self.animations.get(current_state, self.animations["WALK"])
             
         if current_state != self.last_state:
             self.anim_index = 0
             self.anim_timer = 0
             self.last_state = current_state
+            
+            # Joue le son correspondant à l'état s'il existe
+            if current_state in self.sound_map:
+                try:
+                    self.sound_map[current_state].play()
+                except Exception:
+                    pass
             
         if not frames:
             return
@@ -201,12 +150,26 @@ def server_update_boss(mstate, player_states, is_walkable_fn, dt_ms):
         _server_boss_heal(mstate, dt_ms)
     elif b_state == "TELEPORT":
         _server_boss_teleport(mstate, dt_ms)
+    elif b_state == "SPAWN":
+        _server_boss_spawn(mstate, dt_ms)
 
     return hits, new_projectiles
 
 # ------------------------------------------
 # SOUS-FONCTIONS SERVEUR (Helpers)
 # ------------------------------------------
+
+def _server_get_facing_direction(dx, dy):
+    """Détermine la direction principale du regard (up/down/left/right)."""
+    if abs(dx) > abs(dy):
+        return "right" if dx > 0 else "left"
+    return "down" if dy > 0 else "up"
+
+def _server_get_snapped_direction(dx, dy):
+    """Retourne un vecteur normalisé 'snappé' sur les 8 directions (multiples de 45°)."""
+    angle = math.atan2(dy, dx)
+    snap_angle = (round(8 * angle / (2 * math.pi)) % 8) * (math.pi / 4)
+    return [math.cos(snap_angle), math.sin(snap_angle)]
 
 def _server_find_closest_player(mstate, player_states):
     target_pid = None
@@ -261,10 +224,7 @@ def _server_move_towards_target(mstate, target_pos, is_walkable_fn):
             if is_walkable_fn(new_x, mstate["pos"][1]): mstate["pos"][0] = new_x
             if is_walkable_fn(mstate["pos"][0], new_y): mstate["pos"][1] = new_y
         
-        if abs(dx) > abs(dy): 
-            mstate["dir"] = "right" if dx > 0 else "left"
-        else: 
-            mstate["dir"] = "down" if dy > 0 else "up"
+        mstate["dir"] = _server_get_facing_direction(dx, dy)
 
 def _server_boss_pick_next_action(mstate, target_pos, new_projectiles, is_walkable_fn):
     if mstate.get("action_queue"):
@@ -275,7 +235,14 @@ def _server_boss_pick_next_action(mstate, target_pos, new_projectiles, is_walkab
             mstate["force_attack_next"] = False
             next_act = random.choice(["DASH", "SHOOT"])
         else:
-            weights = {"DASH": 30, "SHOOT": 20, "TELEPORT": 15, "REST": 5, "HEAL": 10, "GIGA_COMBO": 20}
+            weights = {
+                "DASH": 30, 
+                "SHOOT": 20, 
+                "TELEPORT": 15, 
+                "REST": 5, 
+                "HEAL": 10, 
+                "GIGA_COMBO": 20
+            }
             if mstate.get("health", 150) >= mstate.get("max_health", 150) * 0.5: 
                 weights["HEAL"] = 0
             if mstate.get("last_action") in weights: 
@@ -297,40 +264,26 @@ def _server_boss_pick_next_action(mstate, target_pos, new_projectiles, is_walkab
     _server_boss_start_action(mstate, next_act, target_pos, new_projectiles, is_walkable_fn)
 
 def _server_boss_start_action(mstate, action, target_pos, new_projectiles, is_walkable_fn):
+    dx = target_pos[0] - mstate["pos"][0]
+    dy = target_pos[1] - mstate["pos"][1]
+
+    if action in ["DASH", "SHOOT"]:
+        mstate["dir"] = _server_get_facing_direction(dx, dy)
+        mstate["move_dir"] = _server_get_snapped_direction(dx, dy)
+
     if action == "DASH":
-        dx = target_pos[0] - mstate["pos"][0]
-        dy = target_pos[1] - mstate["pos"][1]
-        angle = math.atan2(dy, dx)
-        snap_angle = (round(8 * angle / (2 * math.pi)) % 8) * (math.pi / 4)
-        mstate["move_dir"] = [math.cos(snap_angle), math.sin(snap_angle)]
         mstate["action_timer"] = random.randint(1000, 1500)
         mstate["dash_speed"] = 40.0
         mstate["attacking"] = 10
         
-        # Mise à jour de la direction du Boss
-        if abs(dx) > abs(dy):
-            mstate["dir"] = "right" if dx > 0 else "left"
-        else:
-            mstate["dir"] = "down" if dy > 0 else "up"
-        
     elif action == "SHOOT":
         mstate["action_timer"] = 400
         mstate["attacking"] = 10
-        dx = target_pos[0] - mstate["pos"][0]
-        dy = target_pos[1] - mstate["pos"][1]
-        angle = math.atan2(dy, dx)
-        snap_angle = (round(8 * angle / (2 * math.pi)) % 8) * (math.pi / 4)
-        mstate["move_dir"] = [math.cos(snap_angle), math.sin(snap_angle)]
-        
-        # Mise à jour de la direction du Boss
-        if abs(dx) > abs(dy):
-            mstate["dir"] = "right" if dx > 0 else "left"
-        else:
-            mstate["dir"] = "down" if dy > 0 else "up"
         
         speed = 20.0
+        angle = math.atan2(mstate["move_dir"][1], mstate["move_dir"][0])
         for angle_offset in [-0.6, -0.3, 0, 0.3, 0.6]:
-            a = snap_angle + angle_offset
+            a = angle + angle_offset
             new_projectiles.append({
                 "x": mstate["pos"][0], "y": mstate["pos"][1],
                 "vx": math.cos(a) * speed, "vy": math.sin(a) * speed,
@@ -410,4 +363,14 @@ def _server_boss_teleport(mstate, dt_ms):
         mstate["pos"][0] = mstate.get("tp_target_x", mstate["pos"][0])
         mstate["pos"][1] = mstate.get("tp_target_y", mstate["pos"][1])
         mstate["force_attack_next"] = True
+        _server_end_boss_action(mstate)
+
+def _server_boss_spawn(mstate, dt_ms):
+    mstate["action_timer"] -= dt_ms
+    max_hp = mstate.get("max_health", 150)
+    # Régénération fluide sur 10 secondes (10 000 ms)
+    mstate["health"] = min(max_hp, mstate["health"] + (max_hp / 10000.0) * dt_ms)
+    
+    if mstate["action_timer"] <= 0:
+        mstate["health"] = max_hp
         _server_end_boss_action(mstate)

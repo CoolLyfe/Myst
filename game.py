@@ -143,6 +143,16 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     click_feedback_btn = None
     click_feedback_timer = 0
 
+    # --- Initialisation de la musique de base ---
+    current_music = None
+    try:
+        pygame.mixer.music.load("assets/sound/music_casu.mp3")
+        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.play(-1)  # -1 pour jouer en boucle infinie
+        current_music = "casu"
+    except Exception as e:
+        print(f"[GAME] Impossible de charger la musique : {e}")
+
     try:
         while True:
             if not network.running:
@@ -360,6 +370,21 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 boss_active = net_state.get("boss_active", False)
                 boss_room = net_state.get("boss_room", None)
 
+            # --- GESTION DE LA MUSIQUE DYNAMIQUE ---
+            if boss_active and current_music == "casu":
+                try:
+                    pygame.mixer.music.load("assets/sound/music_boss.mp3")
+                    pygame.mixer.music.play(-1)
+                    current_music = "boss"
+                except: pass
+            elif not boss_active and current_music == "boss":
+                # Le boss est vaincu, on remet la musique classique
+                try:
+                    pygame.mixer.music.load("assets/sound/music_casu.mp3")
+                    pygame.mixer.music.play(-1)
+                    current_music = "casu"
+                except: pass
+
             # Process pending hits from the server
             with network.data.lock:
                 hits = list(network.data.pending_hits)
@@ -529,6 +554,8 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 if player.alive and not paused and player.attacking:
                     if player.attack_hitbox.colliderect(m.hitbox):
                         if mid not in player.hit_targets and m.hit_timer <= 0:
+                            if mdata.get("state") == "SPAWN":
+                                continue # Ignore l'attaque localement
                             network.hit_monster(mid, player.attack)
                             player.hit_targets.add(mid)
                             m.take_damage(player.attack)
@@ -552,7 +579,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_w, bar_h), 2)
                     
                     font_boss = pygame.font.SysFont("Chiller", 40)
-                    txt = font_boss.render("BOSS", True, (255, 255, 255))
+                    txt = font_boss.render("Αλέξις Μαφάρτ", True, (255, 255, 255))
                     screen.blit(txt, (SCREEN_W // 2 - txt.get_width() // 2, bar_y - 40))
 
             # Affichage brouillard
@@ -628,6 +655,10 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
             pygame.display.flip()
     finally:
+        try:
+            pygame.mixer.music.stop() 
+        except:
+            pass
         if is_host and 'server' in locals() and server.loop and server.loop.is_running():
             asyncio.run_coroutine_threadsafe(server.stop(), server.loop)
             time.sleep(0.2)
@@ -645,7 +676,6 @@ if __name__ == "__main__":
         print("Usage: python game.py [host|join] [ip]")
         print("Example: python game.py host")
         print("Example: python game.py join 127.0.0.1")
-        # Default for convenience
         choice = input("1. Host\n2. Join\nChoice: ")
         if choice == "1":
             game(is_host=True, is_solo=False)

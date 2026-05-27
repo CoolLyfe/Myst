@@ -17,86 +17,27 @@ class Player(Entity):
             hitbox_height=int(sprite_size * 0.8),
         )
         self.size = sprite_size
-        self.sprite_standing = []
-        self.sprite_runU = []
-        self.sprite_runL = []
-        self.sprite_runR = []
-        self.sprite_runD = []
-        self.sprite_attackU = []
-        self.sprite_attackL = []
-        self.sprite_attackR = []
-        self.sprite_attackD = []
 
-        img = pygame.image.load("assets/player/player_standing_1.png").convert_alpha()
-        self.sprite_standing.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_standing_2.png").convert_alpha()
-        self.sprite_standing.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_standing_3.png").convert_alpha()
-        self.sprite_standing.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        # Utilitaire intelligent pour charger les séquences d'images facilement
+        def load_frames(prefix, count):
+            frames = []
+            for i in range(1, count + 1):
+                try:
+                    img = pygame.image.load(f"assets/player/player_{prefix}_{i}.png").convert_alpha()
+                    frames.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+                except Exception:
+                    pass
+            return frames
 
-        img = pygame.image.load("assets/player/player_Lrun_1.png").convert_alpha()
-        self.sprite_runL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Lrun_2.png").convert_alpha()
-        self.sprite_runL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Lrun_3.png").convert_alpha()
-        self.sprite_runL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-
-        img = pygame.image.load("assets/player/player_Rrun_1.png").convert_alpha()
-        self.sprite_runR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Rrun_2.png").convert_alpha()
-        self.sprite_runR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Rrun_3.png").convert_alpha()
-        self.sprite_runR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-
-        img = pygame.image.load("assets/player/player_Urun_1.png").convert_alpha()
-        self.sprite_runU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Urun_2.png").convert_alpha()
-        self.sprite_runU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Urun_3.png").convert_alpha()
-        self.sprite_runU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-
-        img = pygame.image.load("assets/player/player_Drun_1.png").convert_alpha()
-        self.sprite_runD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Drun_2.png").convert_alpha()
-        self.sprite_runD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Drun_3.png").convert_alpha()
-        self.sprite_runD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-
-        img = pygame.image.load("assets/player/player_Lattaque_1.png").convert_alpha()
-        self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Lattaque_2.png").convert_alpha()
-        self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Lattaque_3.png").convert_alpha()
-        self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Lattaque_4.png").convert_alpha()
-        self.sprite_attackL.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-
-        img = pygame.image.load("assets/player/player_Rattaque_1.png").convert_alpha()
-        self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Rattaque_2.png").convert_alpha()
-        self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Rattaque_3.png").convert_alpha()
-        self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Rattaque_4.png").convert_alpha()
-        self.sprite_attackR.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-
-        img = pygame.image.load("assets/player/player_Uattaque_1.png").convert_alpha()
-        self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Uattaque_2.png").convert_alpha()
-        self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Uattaque_3.png").convert_alpha()
-        self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Uattaque_4.png").convert_alpha()
-        self.sprite_attackU.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-
-        img = pygame.image.load("assets/player/player_Dattaque_1.png").convert_alpha()
-        self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Dattaque_2.png").convert_alpha()
-        self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Dattaque_3.png").convert_alpha()
-        self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
-        img = pygame.image.load("assets/player/player_Dattaque_4.png").convert_alpha()
-        self.sprite_attackD.append(pygame.transform.scale(img, (sprite_size, sprite_size)))
+        self.sprite_standing = load_frames("standing", 3)
+        self.sprite_runL     = load_frames("Lrun", 3)
+        self.sprite_runR     = load_frames("Rrun", 3)
+        self.sprite_runU     = load_frames("Urun", 3)
+        self.sprite_runD     = load_frames("Drun", 3)
+        self.sprite_attackL  = load_frames("Lattaque", 4)
+        self.sprite_attackR  = load_frames("Rattaque", 4)
+        self.sprite_attackU  = load_frames("Uattaque", 4)
+        self.sprite_attackD  = load_frames("Dattaque", 4)
 
         self.sword_swing_sfx = pygame.mixer.Sound("assets/sound/sword_swing.mp3")
         self.sword_swing_sfx.set_volume(0.3)
