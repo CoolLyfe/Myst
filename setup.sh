@@ -42,8 +42,11 @@ else
     
     if [ -f /etc/arch-release ]; then
         sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf > /dev/null 2>&1
+        # Expert Fix for Arch Linux + Python 3.14:
         export CPATH="/usr/include/ffmpeg4.4:$CPATH"
         export LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LIBRARY_PATH"
+        export PKG_CONFIG_PATH="/usr/lib/ffmpeg4.4/pkgconfig:$PKG_CONFIG_PATH"
+        export CFLAGS="-Wno-error=incompatible-pointer-types"
     elif [ -f /etc/debian_version ]; then
         sudo apt-get update > /dev/null 2>&1
         sudo apt-get install -y libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev > /dev/null 2>&1
