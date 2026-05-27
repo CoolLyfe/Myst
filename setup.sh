@@ -54,8 +54,9 @@ else
     if ! python3 -c "import ffpyplayer" &> /dev/null; then
         echo -e "${BLUE}Attempting to install ffpyplayer via pip...${NC}"
         if ! pip install ffpyplayer; then
-            echo -e "${RED}Warning: Failed to install ffpyplayer.${NC}"
-            echo -e "Video support will be disabled, but the game will still run."
+            echo -e "${RED}Error: Failed to install ffpyplayer.${NC}"
+            echo -e "Video support is MANDATORY. Please check the logs above and ensure FFmpeg headers are installed."
+            exit 1
         fi
     fi
 fi
