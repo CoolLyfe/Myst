@@ -19,7 +19,7 @@ fi
 echo -e "${GREEN}[1/4] Python 3 detected.${NC}"
 
 # 2. Create Virtual Environment
-echo -e "${BLUE}[2/4] Creating virtual environment (this may take a moment)...${NC}"
+echo -e "${BLUE}[2/4] Creating virtual environment...${NC}"
 python3 -m venv --system-site-packages .venv > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to create virtual environment.${NC}"
@@ -31,49 +31,45 @@ echo -e "${BLUE}[3/4] Installing dependencies...${NC}"
 source .venv/bin/activate
 python3 -m pip install --upgrade pip --quiet > /dev/null 2>&1
 
-# Install base requirements (this might fail for ffpyplayer, which we fix next)
+# Install base requirements (pygame, Pillow, pymediainfo)
 python3 -m pip install -r game/requirements.txt --quiet > /dev/null 2>&1
 
-# Exact "Expert Fix" command sequence
-if ! python3 -c "import ffpyplayer" > /dev/null 2>&1; then
-    echo -e "${BLUE}[3/4] Video support not found. Applying explicit fix...${NC}"
+# ffpyplayer handling
+if python3 -c "import ffpyplayer" > /dev/null 2>&1; then
+    echo -e "${GREEN}[3/4] Dependencies installed (ffpyplayer ready).${NC}"
+else
+    echo -e "${BLUE}[3/4] Video support not found. Applying expert fix...${NC}"
     
-    # 1. Install build-time dependencies in the venv first
-    echo -e "${BLUE}Installing build tools (Cython, wheel)...${NC}"
+    # 1. Install build tools
     pip install Cython wheel setuptools --quiet
 
     if [ -f /etc/arch-release ]; then
-        echo -e "${BLUE}Ensuring Arch system dependencies are present...${NC}"
         sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf libmediainfo > /dev/null 2>&1
         
         # --- THE HARD-LINKING FIX ---
         export PKG_CONFIG_PATH="/usr/lib/ffmpeg4.4/pkgconfig:$PKG_CONFIG_PATH"
         export CPATH="/usr/include/ffmpeg4.4:$CPATH"
         export LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LIBRARY_PATH"
-        # -Wl,-rpath hardcodes the library location into the binary so we don't need LD_LIBRARY_PATH
         export LDFLAGS="-L/usr/lib/ffmpeg4.4 -Wl,-rpath,/usr/lib/ffmpeg4.4"
         export CFLAGS="-O3 -Wno-error=incompatible-pointer-types"
         
-        echo -e "${BLUE}Re-building ffpyplayer (hard-linking to FFmpeg 4.4)...${NC}"
-        # --force-reinstall --no-cache-dir ensures we don't use the broken 8.0 build
-        pip install ffpyplayer --no-build-isolation --force-reinstall --no-cache-dir
-        # --------------------------
+        echo -e "${BLUE}Building ffpyplayer (this will take a moment)...${NC}"
+        pip install ffpyplayer --no-build-isolation --no-cache-dir
         
     elif [ -f /etc/debian_version ]; then
         sudo apt-get update > /dev/null 2>&1
         sudo apt-get install -y libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev > /dev/null 2>&1
-        pip install ffpyplayer
+        pip install ffpyplayer --no-cache-dir
     fi
 
     # Final validation
-    if python3 -c "import ffpyplayer" > /dev/null 2>&1; then
+    if python3 -c "from ffpyplayer.player import MediaPlayer" > /dev/null 2>&1; then
         echo -e "${GREEN}[3/4] Dependencies installed (ffpyplayer ready).${NC}"
     else
         echo -e "${RED}Error: Failed to install mandatory video support (ffpyplayer).${NC}"
+        echo -e "Compilation failed or library linking is incorrect."
         exit 1
     fi
-else
-    echo -e "${GREEN}[3/4] Dependencies installed (ffpyplayer ready).${NC}"
 fi
 
 # 4. Create Launcher Script
