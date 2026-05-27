@@ -41,7 +41,12 @@ if ! pip install ffpyplayer; then
     echo -e "${RED}Warning: Failed to install ffpyplayer.${NC}"
     echo -e "Video support will be disabled, but the game will still run."
     echo -e "To enable video, you must install system FFmpeg headers:"
-    echo -e "${BLUE}sudo apt-get install libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev${NC}"
+    
+    if [ -f /etc/arch-release ]; then
+        echo -e "On Arch Linux, run: ${BLUE}sudo pacman -S ffmpeg sdl2 pkgconf${NC}"
+    else
+        echo -e "On Ubuntu/Debian, run: ${BLUE}sudo apt-get install libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev${NC}"
+    fi
 fi
 
 # 4. Create Launcher Script
