@@ -46,16 +46,17 @@ if ! python3 -c "import ffpyplayer" > /dev/null 2>&1; then
         echo -e "${BLUE}Ensuring Arch system dependencies are present...${NC}"
         sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf libmediainfo > /dev/null 2>&1
         
-        # --- THE EXACT COMMANDS & FLAGS ---
+        # --- THE HARD-LINKING FIX ---
+        export PKG_CONFIG_PATH="/usr/lib/ffmpeg4.4/pkgconfig:$PKG_CONFIG_PATH"
         export CPATH="/usr/include/ffmpeg4.4:$CPATH"
         export LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LIBRARY_PATH"
-        export LDFLAGS="-L/usr/lib/ffmpeg4.4 $LDFLAGS"
-        export PKG_CONFIG_PATH="/usr/lib/ffmpeg4.4/pkgconfig:$PKG_CONFIG_PATH"
+        # -Wl,-rpath hardcodes the library location into the binary so we don't need LD_LIBRARY_PATH
+        export LDFLAGS="-L/usr/lib/ffmpeg4.4 -Wl,-rpath,/usr/lib/ffmpeg4.4"
         export CFLAGS="-O3 -Wno-error=incompatible-pointer-types"
         
-        echo -e "${BLUE}Building ffpyplayer (this will take a moment)...${NC}"
-        # --no-build-isolation is critical so pip uses our exported flags and installed Cython
-        pip install ffpyplayer --no-build-isolation
+        echo -e "${BLUE}Re-building ffpyplayer (hard-linking to FFmpeg 4.4)...${NC}"
+        # --force-reinstall --no-cache-dir ensures we don't use the broken 8.0 build
+        pip install ffpyplayer --no-build-isolation --force-reinstall --no-cache-dir
         # --------------------------
         
     elif [ -f /etc/debian_version ]; then
@@ -82,12 +83,6 @@ cat << 'EOF' > Myst
 # Myst Launcher
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$SCRIPT_DIR"
-
-# Arch specific: force legacy ffmpeg 4.4 at runtime to prevent undefined symbol errors
-if [ -d "/usr/lib/ffmpeg4.4" ]; then
-    export LD_LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LD_LIBRARY_PATH"
-fi
-
 source .venv/bin/activate
 cd game
 python3 menu.py
