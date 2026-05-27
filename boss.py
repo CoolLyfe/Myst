@@ -19,7 +19,7 @@ class BossState(Enum):
 class Boss(Entity):
     def __init__(self, pos_x, pos_y, sprite_size=200):
         super().__init__(
-            health=150, attack=1, speed=5, nb_potions=0,
+            health=1000, attack=2, speed=5, nb_potions=0,
             image_path="assets/base_monstre.png", 
             pos_x=pos_x, pos_y=pos_y, sprite_size=sprite_size
         )
@@ -189,7 +189,7 @@ def _server_end_boss_action(mstate):
         mstate["cooldown_timer"] = 0
     else:
         mod = 0.15 if mstate.get("in_giga_combo") else 1.0
-        mstate["cooldown_timer"] = 1000 * mod * random.uniform(0.8, 1.2)
+        mstate["cooldown_timer"] = mod * random.uniform(500, 1000)
     mstate["pause_timer"] = 200 if mstate.get("in_giga_combo") else 800
 
 def _server_boss_walk(mstate, target_pid, target_pos, is_walkable_fn, dt_ms, new_projectiles):
@@ -243,7 +243,7 @@ def _server_boss_pick_next_action(mstate, target_pos, new_projectiles, is_walkab
                 "HEAL": 10, 
                 "GIGA_COMBO": 20
             }
-            if mstate.get("health", 150) >= mstate.get("max_health", 150) * 0.5: 
+            if mstate.get("health", 1000) >= mstate.get("max_health", 1000) * 0.5: 
                 weights["HEAL"] = 0
             if mstate.get("last_action") in weights: 
                 weights[mstate["last_action"]] *= 2.0
@@ -287,7 +287,7 @@ def _server_boss_start_action(mstate, action, target_pos, new_projectiles, is_wa
             new_projectiles.append({
                 "x": mstate["pos"][0], "y": mstate["pos"][1],
                 "vx": math.cos(a) * speed, "vy": math.sin(a) * speed,
-                "timer": 2000, "damage": 1
+                "timer": 2000, "damage": 2
             })
             
     elif action == "REST": 
@@ -336,7 +336,7 @@ def _server_boss_dash(mstate, player_states, is_walkable_fn, dt_ms, hits):
         if pstate.get("health", 1) <= 0: continue
         dist_hit = ((pstate["pos"][0] - mstate["pos"][0])**2 + (pstate["pos"][1] - mstate["pos"][1])**2)**0.5
         if dist_hit < 150:
-            hits.append({"pid": pid, "damage": 1, "x": mstate["pos"][0], "y": mstate["pos"][1]})
+            hits.append({"pid": pid, "damage": 2, "x": mstate["pos"][0], "y": mstate["pos"][1]})
             
     if mstate["action_timer"] <= 0: 
         _server_end_boss_action(mstate)
@@ -354,7 +354,7 @@ def _server_boss_rest(mstate, dt_ms):
 def _server_boss_heal(mstate, dt_ms):
     mstate["action_timer"] -= dt_ms
     if mstate["action_timer"] <= 0:
-        mstate["health"] = min(mstate.get("max_health", 150), mstate["health"] + mstate.get("max_health", 150) * 0.15)
+        mstate["health"] = min(mstate.get("max_health", 1000), mstate["health"] + mstate.get("max_health", 1000) * 0.15)
         _server_end_boss_action(mstate)
 
 def _server_boss_teleport(mstate, dt_ms):
@@ -367,7 +367,7 @@ def _server_boss_teleport(mstate, dt_ms):
 
 def _server_boss_spawn(mstate, dt_ms):
     mstate["action_timer"] -= dt_ms
-    max_hp = mstate.get("max_health", 150)
+    max_hp = mstate.get("max_health", 1000)
     # Régénération fluide sur 10 secondes (10 000 ms)
     mstate["health"] = min(max_hp, mstate["health"] + (max_hp / 10000.0) * dt_ms)
     

@@ -632,7 +632,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     elif mtype == "tank":      synced_monsters[mid] = TankMonster(mdata["pos"][0], mdata["pos"][1])
                     elif mtype == "boss":      synced_monsters[mid] = Boss(mdata["pos"][0], mdata["pos"][1], 150)
                     else:                      synced_monsters[mid] = ShadowMonster(mdata["pos"][0], mdata["pos"][1])
-                    synced_monsters[mid].health = mdata.get("health", 150)
+                    synced_monsters[mid].health = mdata.get("health", 1000)
 
                 m = synced_monsters[mid]
 
@@ -695,14 +695,14 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
             # Barre de vie du boss
             for mid, mdata in monsters_data.items():
                 if mdata.get("type") == "boss" and mdata["alive"] and boss_active:
-                    hp_ratio = mdata.get("health", 0) / mdata.get("max_health", 150)
+                    hp_ratio = mdata.get("health", 0) / mdata.get("max_health", 1000)
                     bar_w, bar_h = SCREEN_W // 2, 30
                     bar_x, bar_y = SCREEN_W // 4, 50
                     pygame.draw.rect(screen, (50, 50, 50),  (bar_x, bar_y, bar_w, bar_h))
                     pygame.draw.rect(screen, (200, 0, 0),   (bar_x, bar_y, int(bar_w * hp_ratio), bar_h))
                     pygame.draw.rect(screen, (255, 255, 255),(bar_x, bar_y, bar_w, bar_h), 2)
                     font_boss = pygame.font.SysFont("Chiller", 40)
-                    txt = font_boss.render("BOSS", True, (255, 255, 255))
+                    txt = font_boss.render("Αλέξις Μαφφάρτ", True, (255, 255, 255))
                     screen.blit(txt, (SCREEN_W // 2 - txt.get_width() // 2, bar_y - 40))
 
             # Brouillard

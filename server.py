@@ -415,7 +415,7 @@ class ServerNetwork:
                         spawn_y = bgy * 2000 + 1000
                         self.monster_states["boss_1"] = {
                             "pos": [spawn_x, spawn_y],
-                            "health": 1, "max_health": 150,
+                            "health": 1, "max_health": 1000,
                             "alive": True, "type": "boss",
                             "speed": 3.0, "state": "SPAWN",
                             "cooldown_timer": 800, "action_timer": 10000,
