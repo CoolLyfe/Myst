@@ -1,0 +1,4 @@
+pygame
+Pillow
+pymediainfo
+ffpyplayer

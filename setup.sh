@@ -35,16 +35,13 @@ pip install --upgrade pip
 pip install pygame Pillow pymediainfo
 
 # ffpyplayer often fails on Linux if FFmpeg headers aren't present.
-# We try to install it, and if it fails, we provide specific instructions.
+# We try to install it, and if it fails, we warn but continue.
+echo -e "${BLUE}Attempting to install ffpyplayer (for video support)...${NC}"
 if ! pip install ffpyplayer; then
-    echo -e "${RED}------------------------------------------------------------${NC}"
-    echo -e "${RED}Error: Failed to install ffpyplayer.${NC}"
-    echo -e "This library requires FFmpeg development headers to build from source."
-    echo -e "\nTo fix this on Linux (Ubuntu/Debian), please run:"
+    echo -e "${RED}Warning: Failed to install ffpyplayer.${NC}"
+    echo -e "Video support will be disabled, but the game will still run."
+    echo -e "To enable video, you must install system FFmpeg headers:"
     echo -e "${BLUE}sudo apt-get install libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev${NC}"
-    echo -e "\nThen run ${BLUE}./setup.sh${NC} again."
-    echo -e "${RED}------------------------------------------------------------${NC}"
-    exit 1
 fi
 
 # 4. Create Launcher Script
