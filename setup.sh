@@ -33,8 +33,8 @@ echo -e "${BLUE}[3/4] Installing dependencies (this may take a minute)...${NC}"
 source .venv/bin/activate
 pip install --upgrade pip
 
-# Try installing pygame and Pillow first (usually have wheels)
-pip install pygame Pillow pymediainfo
+# Use the requirements file in the game folder
+pip install -r game/requirements.txt
 
 # ffpyplayer often fails on Linux if FFmpeg headers aren't present.
 # We first check if it's already available (e.g. from system site packages)
@@ -42,6 +42,8 @@ if python3 -c "import ffpyplayer" &> /dev/null; then
     echo -e "${GREEN}ffpyplayer already available.${NC}"
 else
     echo -e "${BLUE}Attempting to install ffpyplayer (for video support)...${NC}"
+    # Redundant pip install ffpyplayer is fine since it's already in requirements.txt
+    # but we do it here to catch the failure and show the warning.
     if ! pip install ffpyplayer; then
         echo -e "${RED}Warning: Failed to install ffpyplayer.${NC}"
         echo -e "Video support will be disabled, but the game will still run."
@@ -63,6 +65,7 @@ cat << 'EOF' > myst.sh
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$SCRIPT_DIR"
 source .venv/bin/activate
+cd game
 python3 menu.py
 EOF
 
