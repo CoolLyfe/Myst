@@ -41,18 +41,21 @@ pip install -r game/requirements.txt
 if python3 -c "import ffpyplayer" &> /dev/null; then
     echo -e "${GREEN}ffpyplayer already available.${NC}"
 else
-    echo -e "${BLUE}Attempting to install ffpyplayer (for video support)...${NC}"
-    # Redundant pip install ffpyplayer is fine since it's already in requirements.txt
-    # but we do it here to catch the failure and show the warning.
-    if ! pip install ffpyplayer; then
-        echo -e "${RED}Warning: Failed to install ffpyplayer.${NC}"
-        echo -e "Video support will be disabled, but the game will still run."
-        echo -e "To enable video, you must install system FFmpeg headers:"
-        
-        if [ -f /etc/arch-release ]; then
-            echo -e "On Arch Linux, run: ${BLUE}sudo pacman -S ffmpeg sdl2 python-ffpyplayer pkgconf${NC}"
-        else
-            echo -e "On Ubuntu/Debian, run: ${BLUE}sudo apt-get install libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev${NC}"
+    echo -e "${BLUE}ffpyplayer not found. Attempting to install system dependencies...${NC}"
+    if [ -f /etc/arch-release ]; then
+        echo -e "${BLUE}Running: sudo pacman -S --needed --noconfirm ffmpeg sdl2 python-ffpyplayer pkgconf${NC}"
+        sudo pacman -S --needed --noconfirm ffmpeg sdl2 python-ffpyplayer pkgconf
+    elif [ -f /etc/debian_version ]; then
+        echo -e "${BLUE}Running: sudo apt-get update && sudo apt-get install -y libavfilter-dev ...${NC}"
+        sudo apt-get update && sudo apt-get install -y libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev
+    fi
+
+    # Try pip install one last time (in case system install wasn't possible or enough)
+    if ! python3 -c "import ffpyplayer" &> /dev/null; then
+        echo -e "${BLUE}Attempting to install ffpyplayer via pip...${NC}"
+        if ! pip install ffpyplayer; then
+            echo -e "${RED}Warning: Failed to install ffpyplayer.${NC}"
+            echo -e "Video support will be disabled, but the game will still run."
         fi
     fi
 fi
