@@ -105,6 +105,19 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
     remote_players  = {}
     synced_monsters = {}
+    _morts_comptabilises = set()  # évite de compter deux fois le meme kill
+
+    # Images des coffres
+    try:
+        coffre_ferme_img  = pygame.image.load("assets/coffre/coffre_ferme.png").convert_alpha()
+        coffre_ouvert_img = pygame.image.load("assets/coffre/coffre_ouvert.png").convert_alpha()
+        COFFRE_SIZE = 64
+        coffre_ferme_img  = pygame.transform.scale(coffre_ferme_img,  (COFFRE_SIZE, COFFRE_SIZE))
+        coffre_ouvert_img = pygame.transform.scale(coffre_ouvert_img, (COFFRE_SIZE, COFFRE_SIZE))
+    except:
+        coffre_ferme_img  = None
+        coffre_ouvert_img = None
+        COFFRE_SIZE = 48
 
     def get_camera_offset(cx, cy):
         cam_x = max(0, min(cx - SCREEN_W // 2, MAP_W - SCREEN_W))
@@ -505,17 +518,20 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                     pygame.draw.ellipse(screen, (80, 255, 120), (sx - 8,  sy - 12, 16, 16))
                     pygame.draw.rect(screen,   (200, 255, 200), (sx - 3,  sy - 20,  6,  8))
 
-            # Coffres
+            # Coffres avec vrais sprites
             for cid, coffre in coffres_data.items():
                 sx, sy = int(coffre["x"] - cam_x), int(coffre["y"] - cam_y)
-                if -60 < sx < SCREEN_W + 60 and -60 < sy < SCREEN_H + 60:
-                    col = (80, 50, 15) if coffre["etat"] == "ouvert" else (160, 100, 30)
-                    pygame.draw.rect(screen, col, (sx - 24, sy - 16, 48, 32))
-                    pygame.draw.rect(screen, (140, 170, 200), (sx - 24, sy - 16, 48, 32), 2)
+                if -80 < sx < SCREEN_W + 80 and -80 < sy < SCREEN_H + 80:
+                    img = coffre_ferme_img if coffre["etat"] == "ferme" else coffre_ouvert_img
+                    if img:
+                        screen.blit(img, (sx - COFFRE_SIZE // 2, sy - COFFRE_SIZE // 2))
+                    else:
+                        col = (80, 50, 15) if coffre["etat"] == "ouvert" else (160, 100, 30)
+                        pygame.draw.rect(screen, col, (sx - 24, sy - 16, 48, 32))
+                        pygame.draw.rect(screen, (140, 170, 200), (sx - 24, sy - 16, 48, 32), 2)
                     if coffre["etat"] == "ferme":
-                        pygame.draw.rect(screen, (190, 215, 235), (sx - 5, sy - 20, 10, 8))
-                    hint_c = hud_font.render("F", True, (190, 215, 235))
-                    screen.blit(hint_c, (sx - hint_c.get_width() // 2, sy - 42))
+                        hint_c = hud_font.render("F", True, (190, 215, 235))
+                        screen.blit(hint_c, (sx - hint_c.get_width() // 2, sy - COFFRE_SIZE // 2 - 16))
 
             # Joueurs distants
             for pid, pdata in remote_data.items():
@@ -561,12 +577,13 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
 
             # Monstres
             for mid, mdata in monsters_data.items():
-                # Comptage des kills quand un monstre passe à mort
+                # Comptage des kills — on garde un set des ids déjà morts pour ne pas doubler
                 if not mdata["alive"]:
-                    if mid in synced_monsters and synced_monsters[mid].alive:
+                    if mid not in _morts_comptabilises and mdata.get("type") != "boss":
+                        _morts_comptabilises.add(mid)
+                        player.nb_kills += 1
+                    if mid in synced_monsters:
                         synced_monsters[mid].alive = False
-                        if mdata.get("type") != "boss":
-                            player.nb_kills += 1
                     continue
 
                 if mid not in synced_monsters:
