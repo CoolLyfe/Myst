@@ -32,7 +32,7 @@ source .venv/bin/activate
 python3 -m pip install --upgrade pip --quiet > /dev/null 2>&1
 
 # Install base requirements (pygame, Pillow, pymediainfo)
-python3 -m pip install -r game/requirements.txt --quiet > /dev/null 2>&1
+python3 -m pip install -r requirements.txt --quiet > /dev/null 2>&1
 
 # ffpyplayer handling
 if python3 -c "import ffpyplayer" > /dev/null 2>&1; then

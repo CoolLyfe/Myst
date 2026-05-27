@@ -2,34 +2,27 @@
 
 Myst is a multiplayer asynchronous RPG dungeon crawler where players explore procedurally generated rooms, fight dangerous monsters, and face off against powerful bosses.
 
-## 🚀 Quick Start (Linux)
+## 🚀 Quick Start
 
-To install and run the game, simply follow these steps:
-
-### 1. Installation
+### For Linux
 Run the setup script from the root of the project:
 ```bash
 ./setup.sh
 ```
-This will automatically:
-- Detect your Python 3 installation.
-- Create a dedicated Virtual Environment (`.venv`).
-- Install all required Python libraries (Pygame, Pillow, etc.).
-- Create a `Myst` launcher.
-
-### 2. Launch the Game
-After installation is complete, start the game using the launcher:
+After installation, start the game with:
 ```bash
 ./Myst
 ```
 
-### 3. Uninstallation
-To remove the virtual environment and the launcher:
-```bash
-./uninstall.sh
+### For Windows
+Run the setup batch file from the root of the project:
+```batch
+setup.bat
 ```
-
----
+After installation, start the game with:
+```batch
+Myst.bat
+```
 
 ## 🛠️ Requirements & Dependencies
 
@@ -62,12 +55,21 @@ sudo pacman -S ffmpeg sdl2 python-ffpyplayer pkgconf
 - **Boss Fights:** Face the legendary boss Αλέξις Μαφφάρτ in his dedicated chamber.
 - **Save System:** Keybindings and volume settings are saved automatically.
 
+### 🧹 Uninstallation
+
+To remove the virtual environment and the launcher:
+
+**Linux:** `./uninstall.sh`
+**Windows:** `uninstall.bat`
+
 ## 📂 Project Structure
 
-- `setup.sh`: Automated installer and environment setup.
-- `Myst`: (Generated after setup) Main game launcher.
+- `setup.sh` / `setup.bat`: Automated installer and environment setup.
+- `Myst` / `Myst.bat`: (Generated after setup) Main game launcher.
+- `uninstall.sh` / `uninstall.bat`: Clean up the project environment.
 - `game/`: Contains all source code, assets (sounds, music, images), and game logic.
 - `.venv/`: (Generated after setup) Local virtual environment.
+- `requirements.txt`: List of Python dependencies.
 
 ---
 
