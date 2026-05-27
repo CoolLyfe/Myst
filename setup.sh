@@ -19,50 +19,48 @@ fi
 echo -e "${GREEN}[1/4] Python 3 detected.${NC}"
 
 # 2. Create Virtual Environment
-echo -e "${BLUE}[2/4] Creating virtual environment (with system site packages)...${NC}"
-# We use --system-site-packages so that if you have ffpyplayer installed via pacman,
-# the virtual environment can use it instead of trying to compile it.
-python3 -m venv --system-site-packages .venv
+echo -e "${BLUE}[2/4] Creating virtual environment (this may take a moment)...${NC}"
+python3 -m venv --system-site-packages .venv > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: Failed to create virtual environment. You might need to install python3-venv.${NC}"
+    echo -e "${RED}Error: Failed to create virtual environment.${NC}"
     exit 1
 fi
 
 # 3. Install Dependencies
-echo -e "${BLUE}[3/4] Installing dependencies (this may take a minute)...${NC}"
+echo -e "${BLUE}[3/4] Installing dependencies...${NC}"
 source .venv/bin/activate
-pip install --upgrade pip
+python3 -m pip install --upgrade pip --quiet > /dev/null 2>&1
 
 # Use the requirements file in the game folder
-pip install -r game/requirements.txt
+python3 -m pip install -r game/requirements.txt --quiet > /dev/null 2>&1
 
-# ffpyplayer often fails on Linux if FFmpeg headers aren't present.
-# We first check if it's already available (e.g. from system site packages)
-if python3 -c "import ffpyplayer" &> /dev/null; then
-    echo -e "${GREEN}ffpyplayer already available.${NC}"
+# ffpyplayer check and automated fix
+if python3 -c "import ffpyplayer" > /dev/null 2>&1; then
+    echo -e "${GREEN}[3/4] Dependencies installed (ffpyplayer ready).${NC}"
 else
-    echo -e "${BLUE}ffpyplayer not found. Attempting to install system dependencies...${NC}"
+    echo -e "${BLUE}[3/4] Video support not found. Attempting automated fix...${NC}"
+    
     if [ -f /etc/arch-release ]; then
-        echo -e "${BLUE}Running: sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf${NC}"
-        sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf
-        
-        # Arch specific: ffpyplayer needs the legacy ffmpeg 4.4 paths
+        sudo pacman -S --needed --noconfirm ffmpeg4.4 sdl2 pkgconf > /dev/null 2>&1
         export CPATH="/usr/include/ffmpeg4.4:$CPATH"
         export LIBRARY_PATH="/usr/lib/ffmpeg4.4:$LIBRARY_PATH"
     elif [ -f /etc/debian_version ]; then
-        echo -e "${BLUE}Running: sudo apt-get update && sudo apt-get install -y libavfilter-dev ...${NC}"
-        sudo apt-get update && sudo apt-get install -y libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev
+        sudo apt-get update > /dev/null 2>&1
+        sudo apt-get install -y libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev > /dev/null 2>&1
     fi
 
-    # Try pip install one last time
-    if ! python3 -c "import ffpyplayer" &> /dev/null; then
-        echo -e "${BLUE}Attempting to install ffpyplayer via pip...${NC}"
-        if ! pip install ffpyplayer; then
-            echo -e "${RED}Error: Failed to install ffpyplayer.${NC}"
-            echo -e "Compilation failed. This is likely because your Python version ($(python3 --version)) is too new for ffpyplayer."
-            echo -e "Please try using Python 3.12 or 3.13 if possible."
-            exit 1
-        fi
+    # Try pip install one last time silently
+    if ! python3 -c "import ffpyplayer" > /dev/null 2>&1; then
+        python3 -m pip install ffpyplayer --quiet > /dev/null 2>&1
+    fi
+
+    # Final validation
+    if python3 -c "import ffpyplayer" > /dev/null 2>&1; then
+        echo -e "${GREEN}[3/4] Dependencies installed (ffpyplayer ready).${NC}"
+    else
+        echo -e "${RED}Error: Failed to install mandatory video support (ffpyplayer).${NC}"
+        echo -e "Your system environment may be incompatible with this library."
+        exit 1
     fi
 fi
 
