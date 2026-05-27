@@ -30,9 +30,20 @@ fi
 echo -e "${BLUE}[3/4] Installing dependencies (this may take a minute)...${NC}"
 source .venv/bin/activate
 pip install --upgrade pip
-pip install pygame Pillow ffpyplayer pymediainfo
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: Failed to install dependencies.${NC}"
+
+# Try installing pygame and Pillow first (usually have wheels)
+pip install pygame Pillow pymediainfo
+
+# ffpyplayer often fails on Linux if FFmpeg headers aren't present.
+# We try to install it, and if it fails, we provide specific instructions.
+if ! pip install ffpyplayer; then
+    echo -e "${RED}------------------------------------------------------------${NC}"
+    echo -e "${RED}Error: Failed to install ffpyplayer.${NC}"
+    echo -e "This library requires FFmpeg development headers to build from source."
+    echo -e "\nTo fix this on Linux (Ubuntu/Debian), please run:"
+    echo -e "${BLUE}sudo apt-get install libavfilter-dev libavdevice-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libpostproc-dev libsdl2-dev${NC}"
+    echo -e "\nThen run ${BLUE}./setup.sh${NC} again."
+    echo -e "${RED}------------------------------------------------------------${NC}"
     exit 1
 fi
 
