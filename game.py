@@ -109,6 +109,17 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
     _drops_ramasses      = set()  # évite de ramasser deux fois la meme potion
     _coffres_ouverts     = set()  # évite d'ouvrir deux fois le meme coffre
 
+    # Couleurs distinctes pour chaque joueur distant
+    COULEURS_JOUEURS = [
+        (255, 80,  80),   # rouge
+        (80,  180, 255),  # bleu
+        (80,  255, 120),  # vert
+        (255, 200, 50),   # jaune
+        (200, 80,  255),  # violet
+        (255, 140, 50),   # orange
+    ]
+    pseudo_font = pygame.font.SysFont("Chiller", 28)
+
     # Images des coffres
     try:
         coffre_ferme_img  = pygame.image.load("assets/coffre/coffre_ferme.png").convert_alpha()
@@ -402,7 +413,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                         if dist < 60:
                             _drops_ramasses.add(drop_id)
                             network.ramasser_potion(drop_id)
-                            player.nb_potions += drop.get("soin", 1)
+                            # pas d'ajout local — le serveur envoie chest_reward
 
                 # Ouverture de coffre avec la touche F au contact
                 if player.alive and keys[pygame.K_f]:
@@ -540,6 +551,7 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                         screen.blit(hint_c, (sx - hint_c.get_width() // 2, sy - COFFRE_SIZE // 2 - 16))
 
             # Joueurs distants
+            pids_tries = sorted(remote_data.keys())
             for pid, pdata in remote_data.items():
                 if pdata.get("health", 1) <= 0: continue
                 if pid not in remote_players:
@@ -550,8 +562,29 @@ def game(is_host=False, server_ip="127.0.0.1", is_solo=False, room_name=None):
                 rp.attacking   = pdata["attacking"]
                 rp.set_running(pdata.get("running", False))
                 rp.update(delta_ms, pdata.get("moving", False))
-                rp_blit_rect = rp.image.get_rect(center=(rp.rect.centerx - cam_x, rp.rect.centery - cam_y))
+
+                rx = rp.rect.centerx - cam_x
+                ry = rp.rect.centery - cam_y
+                rp_blit_rect = rp.image.get_rect(center=(rx, ry))
+
+                # Couleur unique par joueur
+                idx = pids_tries.index(pid) % len(COULEURS_JOUEURS)
+                couleur = COULEURS_JOUEURS[idx]
+
+                # Cercle coloré sous le joueur
+                pygame.draw.ellipse(screen, couleur,
+                    (rx - 20, ry + rp.image.get_height() // 2 - 8, 40, 14))
+
+                # Sprite
                 screen.blit(rp.image, rp_blit_rect)
+
+                # Pseudo "Joueur N" au-dessus
+                pseudo_surf = pseudo_font.render(f"Joueur {pid}", True, couleur)
+                shadow_surf = pseudo_font.render(f"Joueur {pid}", True, (0, 0, 0))
+                px = rx - pseudo_surf.get_width() // 2
+                py = ry - rp.image.get_height() // 2 - 22
+                screen.blit(shadow_surf, (px + 1, py + 1))
+                screen.blit(pseudo_surf, (px, py))
 
             # Joueur local
             player_screen_x = player.rect.centerx - cam_x
