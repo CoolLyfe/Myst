@@ -59,7 +59,7 @@ fi
 
 # 4. Create Launcher Script
 echo -e "${BLUE}[4/4] Creating launcher...${NC}"
-cat << 'EOF' > myst.sh
+cat << 'EOF' > Myst
 #!/bin/bash
 # Myst Launcher
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -69,7 +69,7 @@ cd game
 python3 menu.py
 EOF
 
-chmod +x myst.sh
+chmod +x Myst
 
 echo -e "${GREEN}=== Setup Complete ===${NC}"
-echo -e "You can now start the game by running: ${BLUE}./myst.sh${NC}"
+echo -e "You can now start the game by running: ${BLUE}./Myst${NC}"

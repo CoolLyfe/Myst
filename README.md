@@ -15,12 +15,12 @@ This will automatically:
 - Detect your Python 3 installation.
 - Create a dedicated Virtual Environment (`.venv`).
 - Install all required Python libraries (Pygame, Pillow, etc.).
-- Create a `myst.sh` launcher.
+- Create a `Myst` launcher.
 
 ### 2. Launch the Game
 After installation is complete, start the game using the launcher:
 ```bash
-./myst.sh
+./Myst
 ```
 
 ---
@@ -59,7 +59,7 @@ sudo pacman -S ffmpeg sdl2 python-ffpyplayer pkgconf
 ## 📂 Project Structure
 
 - `setup.sh`: Automated installer and environment setup.
-- `myst.sh`: (Generated after setup) Main game launcher.
+- `Myst`: (Generated after setup) Main game launcher.
 - `game/`: Contains all source code, assets (sounds, music, images), and game logic.
 - `.venv/`: (Generated after setup) Local virtual environment.
 
